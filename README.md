@@ -1,2 +1,3 @@
-# dotfiles
-My dotfiles
+# My Dotfiles
+
+Contains my dotfiles related to zsh and neovim

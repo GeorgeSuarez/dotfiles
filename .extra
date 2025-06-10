@@ -1,6 +1,0 @@
-alias ipy='ipython qtconsole --ConsoleWidget.font_family="Consolas" --ConsoleWidget.font_size=14'
-
-alias csusb='ssh -L 5900:localhost:5900 006098556@csevnc.cse.csusb.edu'
-
-code () { VSCODE_CWD="$PWD" open -n -b "com.microsoft.VSCode" --args $* ;}
-
