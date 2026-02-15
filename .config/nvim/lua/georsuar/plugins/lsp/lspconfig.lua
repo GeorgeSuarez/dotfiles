@@ -6,9 +6,9 @@ return {
 		{ "antosha417/nvim-lsp-file-operations", config = true },
 		{ "folke/neodev.nvim", opts = {} },
 	},
+
 	config = function()
-		-- import lspconfig plugin
-		local lspconfig = require("lspconfig")
+		vim.lsp.enable("lua_ls")
 
 		-- import mason_lspconfig plugin
 		local mason_lspconfig = require("mason-lspconfig")
@@ -78,11 +78,24 @@ return {
 			vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
 		end
 
+		-- lspconfig.sourcekit.setup({
+		-- 	capabilities = capabilities,
+		-- 	cmd = { "xcrun", "sourcekit-lsp" },
+		-- 	filetypes = { "swift", "c", "cpp", "objective-c", "objective-cpp" },
+		-- 	root_dir = lspconfig.util.root_pattern("Package.swift", "*.xcodeproj", "*.xcworkspace", ".git"),
+		-- 	init_options = {
+		-- 		completion = {
+		-- 			maxResults = 200,
+		-- 		},
+		-- 	},
+		-- })
+		--
 		mason_lspconfig.setup({
 			-- default handler for installed servers
 			function(server_name)
 				lspconfig[server_name].setup({
 					capabilities = capabilities,
+					cmd = { "xcrun" },
 				})
 			end,
 			["svelte"] = function()
@@ -125,7 +138,7 @@ return {
 			end,
 			["lua_ls"] = function()
 				-- configure lua server (with special settings)
-				lspconfig["lua_ls"].setup({
+				vim.lsp.config("lua_ls", {
 					capabilities = capabilities,
 					settings = {
 						Lua = {
