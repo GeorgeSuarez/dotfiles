@@ -1,5 +1,6 @@
 return {
 	"nvim-treesitter/nvim-treesitter",
+	branch = "master",
 	event = { "BufReadPre", "BufNewFile" },
 	build = ":TSUpdate",
 	dependencies = {
@@ -27,14 +28,10 @@ return {
 				"prisma",
 				"markdown",
 				"markdown_inline",
-				"svelte",
-				"graphql",
 				"bash",
 				"lua",
 				"vim",
-				"dockerfile",
 				"gitignore",
-				"query",
 				"vimdoc",
 				"swift",
 				"c",
@@ -55,15 +52,28 @@ return {
 	end,
 
 	{
+		"JoosepAlviste/nvim-ts-context-commentstring",
+		config = function()
+			vim.g.skip_ts_context_commentstring_module = true
+		end,
+		opts = {
+			options = {
+				c = { __default = "// %s", __multiline = "/* %s */" },
+				cpp = { __default = "// %s", __multiline = "/* %s */" },
+			},
+		},
+	},
+
+	{
 		"nvim-treesitter/nvim-treesitter-context",
 		config = function()
 			require("treesitter-context").setup({
 				enable = true,
 				multiwindow = false,
-				max_lines = 0,
+				max_lines = 4,
 				min_window_height = 0,
 				line_numbers = true,
-				multiline_threshold = 20,
+				multiline_threshold = 1,
 				trim_scope = "outer",
 				mode = "cursor",
 				seperator = nil,

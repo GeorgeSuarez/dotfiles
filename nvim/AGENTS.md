@@ -14,12 +14,14 @@ Since this is a Neovim configuration (not a traditional project), there are no b
 ## Code Style Guidelines
 
 ### File Structure
+
 - Entry point: `init.lua` - requires core modules and lazy.nvim setup
 - Core settings: `lua/georsuar/core/` - options, keymaps, init
 - Plugins: `lua/georsuar/plugins/` - individual plugin configs
 - LSP configs: `lua/georsuar/plugins/lsp/` - LSP-related plugins
 
 ### Lua Style
+
 - **Indentation**: 2 spaces (soft tabs) for plugin configs, 4 spaces for options/keymaps
 - **Quotes**: Double quotes for strings
 - **Line endings**: Unix-style (LF)
@@ -27,16 +29,19 @@ Since this is a Neovim configuration (not a traditional project), there are no b
 - **Semicolons**: Don't use semicolons
 
 ### Naming Conventions
+
 - **Variables**: Use `snake_case` for local variables
 - **Functions**: Use `snake_case` for function names
 - **Modules**: Module names use lowercase with hyphens in plugin repos
 
 ### Imports and Requires
+
 - Use local variables for conciseness: `local opt = vim.opt`
 - Load modules with dot notation: `require("georsuar.core")`
 - Group related requires together
 
 ### Keymaps
+
 - Set leader key at top: `vim.g.mapleader = " "`
 - Use `vim.keymap.set()` API
 - Always provide descriptions: `{ desc = "Description here" }`
@@ -45,6 +50,7 @@ Since this is a Neovim configuration (not a traditional project), there are no b
 - Comment each keymap with its purpose
 
 ### Plugin Specifications
+
 - Return a Lua table with plugin spec
 - Use `config = function()` for setup
 - Use `dependencies = { ... }` for plugin dependencies
@@ -52,30 +58,35 @@ Since this is a Neovim configuration (not a traditional project), there are no b
 - Use `build = ":TSUpdate"` for treesitter-like build steps
 
 ### Comments
+
 - Use `--` for single-line comments
 - Add space after dashes: `-- comment text`
 - Use inline comments sparingly and keep them concise
 - Comment sections with headers: `-- Section Name -------------------`
 
 ### Error Handling
+
 - Check for plugin availability before requiring: `local ok, plugin = pcall(require, "plugin")`
 - Use vim.notify for user-facing messages
 - Handle LSP attach events with proper autocmd groups
 
 ### LSP Configuration
+
 - Use `vim.lsp.enable()` for enabling language servers
 - Create autocmd groups for LSP attach: `vim.api.nvim_create_augroup("UserLspConfig", {})`
 - Set capabilities from cmp-nvim-lsp for autocompletion
 - Define diagnostic signs with Nerd Font icons
 
 ### Formatting Integration
+
 - Uses conform.nvim for formatting
 - Format on save enabled with 5000ms timeout
 - Formatters: prettier (web), stylua (lua), black/isort (python), clang-format (c/cpp), gofmt (go)
 
 ### Linting Integration
+
 - Uses nvim-lint for linting
-- Linters: eslint_d (web), pylint (python), swiftlint (swift)
+- Linters: eslint_d (web), ruff (python), swiftlint (swift)
 - Triggers on BufEnter, BufWritePost, InsertLeave
 
 ## Testing Changes
