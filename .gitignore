@@ -1,5 +1,2 @@
 .DS_Store
-iterm2/
-opencode/
-thefuck/
-raycast/
+/nvim/node_modules/
