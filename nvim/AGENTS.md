@@ -22,7 +22,7 @@ Since this is a Neovim configuration (not a traditional project), there are no b
 
 ### Lua Style
 
-- **Indentation**: 2 spaces (soft tabs) for plugin configs, 4 spaces for options/keymaps
+- **Indentation**: 4 spaces (soft tabs) — enforced globally via `stylua.toml`
 - **Quotes**: Double quotes for strings
 - **Line endings**: Unix-style (LF)
 - **Trailing whitespace**: Trim trailing whitespace
@@ -87,7 +87,7 @@ Since this is a Neovim configuration (not a traditional project), there are no b
 
 - Uses nvim-lint for linting
 - Linters: eslint_d (web), ruff (python), swiftlint (swift)
-- Triggers on BufEnter, BufWritePost, InsertLeave
+- Triggers on BufReadPost, BufWritePost, InsertLeave
 
 ## Testing Changes
 
@@ -105,4 +105,4 @@ Since this is a Neovim configuration (not a traditional project), there are no b
 - Leader key is set to space (`<leader>` = space)
 - Uses termguicolors for true color support
 - Clipboard is set to use system clipboard (`unnamedplus`)
-- Tab width is 4 spaces in editor, 2 spaces in plugin configs
+- Tab width is 4 spaces everywhere (editor and Lua source)

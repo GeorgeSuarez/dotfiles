@@ -1,6 +1,6 @@
 return {
-	"kylechui/nvim-surround",
-	event = { "BufReadPre", "BufNewFile" },
-	version = "*",
-	opts = {},
+    "kylechui/nvim-surround",
+    event = { "BufReadPre", "BufNewFile" },
+    version = "*",
+    opts = {},
 }
