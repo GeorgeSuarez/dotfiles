@@ -26,17 +26,10 @@ export PATH="/usr/local/opt/python/libexec/bin:$PATH"
 
 export EDITOR="nvim"
 
-# Preferred editor for local and remote sessions
-if [[ -n $SSH_CONNECTION ]]; then
-  export EDITOR='nvim'
-else
-  export EDITOR='vim'
-fi
-
 alias reload-zsh="source ~/.zshrc"
 alias ezsh="nvim ~/.zshrc"
 alias envim="nvim ~/.config/nvim/"
-alias eghost="nvim ~/Library/Application Support/com.mitchellh.ghostty/config.ghostty"
+alias eghost="ghostty +edit-config"
 alias py="python3"
 alias python="python3"
 alias cr="cargo run"
