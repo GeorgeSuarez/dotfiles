@@ -1,0 +1,82 @@
+snippet clg "console.log"
+    console.log($1)$0
+
+snippet clr "console.dir"
+    console.dir($1, { depth: null })$0
+
+snippet imp "import"
+    import ${2:${1}} from "${1}"$0
+
+snippet imd "import default"
+    import ${1:name} from "${2:module}"$0
+
+snippet imt "import type"
+    import type { ${2:${1}} } from "${1}"$0
+
+snippet imr "import react"
+    import React from "react"$0
+
+snippet imus "import useState"
+    import { useState } from "react"$0
+
+snippet imue "import useEffect"
+    import { useEffect } from "react"$0
+
+snippet exp "export"
+    export $1$0
+
+snippet exd "export default"
+    export default $1$0
+
+snippet exn "export named"
+    export const ${1:name} = ${2:value}$0
+
+snippet rafc "React arrow function component"
+    export const ${1:Component} = (${2:props}: ${3:Props}) => {
+        return (
+            ${0:<div></div>}
+        )
+    }
+
+snippet tsrafc "TypeScript React arrow function component"
+    interface ${1:Component}Props {
+        ${2}
+    }
+
+    export const ${1:Component}: React.FC<${1:Component}Props> = ({ ${3} }) => {
+        return (
+            ${0:<div></div>}
+        )
+    }
+
+snippet usest "useState"
+    const [${1:state}, set${1:State}] = useState<${2:string}>(${3:initial})$0
+
+snippet useef "useEffect"
+    useEffect(() => {
+        ${1}
+    }, [${2}])$0
+
+snippet usecb "useCallback"
+    const ${1:handler} = useCallback((${2}) => {
+        ${3}
+    }, [${4}])$0
+
+snippet usememo "useMemo"
+    const ${1:value} = useMemo(() => {
+        ${2}
+    }, [${3}])$0
+
+snippet useref "useRef"
+    const ${1:ref} = useRef<${2:HTMLDivElement}>(null)$0
+
+snippet ts "type assertion"
+    as ${1:Type}$0
+
+snippet arrow "arrow function"
+    (${1}) => ${0}
+
+snippet ifthrow "if throw guard"
+    if (${1:value} == null) {
+        throw new Error("${2:message}")
+    }$0

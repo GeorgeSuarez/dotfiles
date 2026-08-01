@@ -1,0 +1,18 @@
+# Terminal Theme
+theme = Cyberpunk
+
+# Fonts
+font-family = "FiraCode Nerd Font Mono Ret"
+
+# Cursor Styling
+cursor-style = block
+cursor-style-blink = false
+shell-integration-features = no-cursor
+
+# Window animations
+window-vsync = false
+
+# Background Settings
+background-opacity = 0.50
+background-blur = 0
+

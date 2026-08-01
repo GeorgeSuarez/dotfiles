@@ -1,0 +1,6 @@
+README.md
+Brewfile
+install.sh
+**/node_modules/**
+**/.git/**
+*.log
