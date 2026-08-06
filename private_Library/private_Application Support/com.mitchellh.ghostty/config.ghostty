@@ -14,5 +14,5 @@ window-vsync = false
 
 # Background Settings
 background-opacity = 0.50
-background-blur = 0
+background-blur = macos-glass-regular
 
