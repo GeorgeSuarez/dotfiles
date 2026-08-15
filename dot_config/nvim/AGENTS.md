@@ -81,12 +81,12 @@ Since this is a Neovim configuration (not a traditional project), there are no b
 
 - Uses conform.nvim for formatting
 - Format on save enabled with 5000ms timeout
-- Formatters: prettier (web), stylua (lua), black/isort (python), clang-format (c/cpp), gofmt (go)
+- Formatters: oxfmt (web), stylua (lua), black/isort (python), clang-format (c/cpp), gofmt (go)
 
 ### Linting Integration
 
 - Uses nvim-lint for linting
-- Linters: eslint_d (web), ruff (python), swiftlint (swift)
+- Linters: oxlint (web), ruff (python), swiftlint (swift)
 - Triggers on BufReadPost, BufWritePost, InsertLeave
 
 ## Testing Changes

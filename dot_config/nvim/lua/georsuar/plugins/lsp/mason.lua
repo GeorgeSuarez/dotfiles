@@ -44,7 +44,7 @@ return {
                 -- lsp servers
                 "roslyn-language-server",
                 -- formatters
-                "prettier",
+                "oxfmt",
                 "stylua",
                 "isort",
                 "black",
@@ -52,7 +52,7 @@ return {
                 "csharpier",
                 -- linters
                 "ruff",
-                "eslint_d",
+                "oxlint",
                 "swiftlint",
             },
         })
