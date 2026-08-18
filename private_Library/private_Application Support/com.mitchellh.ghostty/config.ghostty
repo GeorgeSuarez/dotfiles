@@ -1,18 +1,39 @@
 # Terminal Theme
 theme = Cyberpunk
 
+# Updates
+auto-update-channel = tip
+
 # Fonts
 font-family = "FiraCode Nerd Font Mono Ret"
+font-size = 16
+font-style-bold = Bold
 
 # Cursor Styling
 cursor-style = block
 cursor-style-blink = false
-shell-integration-features = no-cursor
 
-# Window animations
+# Shell integrations
+shell-integration = zsh
+shell-integration-features = no-cursor
+quit-after-last-window-closed = true
+
+# Clipboard settings
+clipboard-read = allow
+clipboard-write = allow
+
+# Window settings
+window-width = 90
+window-height = 30
 window-vsync = false
 
 # Background Settings
 background-opacity = 0.50
 background-blur = macos-glass-regular
+
+# MacOS Options
+macos-titlebar-proxy-icon = hidden
+
+# Title
+title = ghostty
 
