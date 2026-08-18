@@ -1,3 +1,8 @@
 .DS_Store
 *.log
 node_modules/
+
+# Secrets — applied by chezmoi but never committed
+dot_pi/agent/private_auth.json
+dot_pi/agent/private_models-store.json
+dot_pi/agent/sessions/
