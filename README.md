@@ -6,6 +6,7 @@ My macOS dotfiles, managed with [chezmoi](https://chezmoi.io).
 - Shell: `.zshrc`, `.zshenv`, `.zprofile`, `.p10k.zsh`
 - `.tmux.conf`, `.gitconfig`
 - `~/.config/nvim`, `~/.config/opencode`
+- `~/.pi/agent` settings and the `pi-workflow` extension
 - Ghostty config, herdr `config.toml`
 
 Excluded: `.ssh`, caches, state, machine-local files (see `~/.zshrc.local`).
@@ -19,3 +20,5 @@ git clone https://github.com/GeorgeSuarez/dotfiles.git && cd dotfiles && ./insta
 - Edit configs in place as usual.
 - `sync-dotfiles` — re-add live changes to chezmoi, show `chezmoi diff`, apply.
 - `push-dotfiles` — stage, review `git diff --cached`, commit, push.
+
+See [`PI_ROADMAP.md`](PI_ROADMAP.md) for the Pi extension roadmap and shipped workflow features.

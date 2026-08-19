@@ -1,0 +1,62 @@
+# Pi extensions
+
+These extensions are auto-discovered from `~/.pi/agent/extensions/`.
+
+## Features
+
+| Extension | Capability |
+| --- | --- |
+| `websearch.ts` | OpenCode-compatible Exa/Parallel web search |
+| `webfetch.ts` | Bounded URL fetching and HTML-to-text extraction |
+| `browser.ts` | `agent-browser` navigation and interaction |
+| `plan-mode.ts` | Read-only `/plan` mode and `Ctrl+Alt+P` toggle |
+| `git-checkpoint.ts` | Automatic and manual Git checkpoints |
+| `test-runner.ts` | Detected repository tests through `run_tests` and `/test` |
+| `github.ts` | Read-only GitHub issue, PR, and CI inspection through `gh` |
+| `dynamic-tools.ts` | Lazy tool activation through `search_tools` and `/tools` |
+| `local-provider.ts` | Dynamic local OpenAI-compatible provider/model discovery |
+| `provider-fallback.ts` | Manual model fallback and provider error notifications |
+| `status-line.ts` | Enhanced context, token, cost, model, branch, and extension status footer |
+
+## Environment configuration
+
+```sh
+# Web search
+EXA_API_KEY=...                         # optional
+OPENCODE_WEBSEARCH_PROVIDER=parallel    # optional: exa or parallel
+PARALLEL_API_KEY=...                    # optional
+
+# Browser
+PI_BROWSER_SESSION=my-project
+PI_BROWSER_ALLOWED_DOMAINS=github.com,google.com,localhost
+PI_LAZY_TOOLS=webfetch,browser,run_tests,github
+
+# Local OpenAI-compatible provider
+PI_LOCAL_PROVIDER_URL=http://127.0.0.1:11434/v1
+PI_LOCAL_PROVIDER_API_KEY=local
+PI_LOCAL_PROVIDER_NAME=ollama
+PI_LOCAL_MODELS=llama3.2,qwen2.5-coder
+
+# Manual model fallback targets, in priority order
+PI_PROVIDER_FALLBACKS=ollama/qwen2.5-coder,opencode-go/gpt-5.6-luna
+```
+
+## Commands
+
+```text
+/plan [on|off]       Toggle read-only planning mode
+/checkpoint          Save current Git changes
+/checkpoints         List session checkpoints
+/rollback            Restore the latest checkpoint
+/test [target]       Run repository tests/checks
+/github issue ...    Inspect GitHub issues
+/github pr ...       Inspect pull requests
+/github checks ...   Inspect CI checks
+/tools               List active tools
+/tools browser       Activate tools matching a capability
+/providers            Show local provider configuration
+/fallback             Switch to the next configured fallback model
+/status-line          Toggle the enhanced context and cost footer
+```
+
+The browser extension delegates to `agent-browser`; install it separately and configure an allowed-domain list for safer navigation. `github.ts` requires the GitHub CLI (`gh`) and an authenticated session for private repositories.

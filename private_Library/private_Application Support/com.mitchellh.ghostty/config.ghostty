@@ -33,6 +33,7 @@ background-blur = macos-glass-regular
 
 # MacOS Options
 macos-titlebar-proxy-icon = hidden
+macos-titlebar-style = tabs
 
 # Title
 title = ghostty

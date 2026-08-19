@@ -26,6 +26,8 @@ export PATH="/usr/local/opt/python/libexec/bin:$PATH"
 
 export EDITOR="nvim"
 
+DISABLE_AUTO_TITLE="true"
+
 alias reload-zsh="source ~/.zshrc"
 alias ezsh="nvim ~/.zshrc"
 alias envim="nvim ~/.config/nvim/"
@@ -34,6 +36,7 @@ alias py="python3"
 alias python="python3"
 alias cr="cargo run"
 alias oc="opencode"
+alias oc2="opencode2"
 
 # Machine-local aliases (not synced): projects, custom tools
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local

@@ -1,0 +1,7 @@
+{
+  "name": "pi-extensions",
+  "private": true,
+  "dependencies": {
+    "@nicknisi/pi-cloak": "^0.1.2"
+  }
+}
