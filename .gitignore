@@ -6,3 +6,4 @@ node_modules/
 dot_pi/agent/private_auth.json
 dot_pi/agent/private_models-store.json
 dot_pi/agent/sessions/
+dot_pi/research
