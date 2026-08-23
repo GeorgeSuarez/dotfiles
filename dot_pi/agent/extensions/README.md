@@ -9,7 +9,6 @@ These extensions are auto-discovered from `~/.pi/agent/extensions/`.
 | `websearch.ts` | OpenCode-compatible Exa/Parallel web search |
 | `webfetch.ts` | Bounded URL fetching and HTML-to-text extraction |
 | `browser.ts` | `agent-browser` navigation and interaction |
-| `plan-mode.ts` | Read-only `/plan` mode and `Ctrl+Alt+P` toggle |
 | `git-checkpoint.ts` | Automatic and manual Git checkpoints |
 | `test-runner.ts` | Detected repository tests through `run_tests` and `/test` |
 | `github.ts` | Read-only GitHub issue, PR, and CI inspection through `gh` |
