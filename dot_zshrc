@@ -68,3 +68,5 @@ if output="$(mole completion zsh 2>/dev/null)"; then eval "$output"; fi
 [[ -f "$HOME/.local/bin/env" ]] && . "$HOME/.local/bin/env"
 export PATH=$PATH:$HOME/.maestro/bin
 export PATH=$PATH:$HOME/.maestro/bin
+
+export ANDROID_HOME=$HOME/Library/Android/sdk && export PATH=$PATH:$ANDROID_HOME/emulator && export PATH=$PATH:$ANDROID_HOME/platform-tools

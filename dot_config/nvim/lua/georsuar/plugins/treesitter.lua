@@ -37,10 +37,6 @@ return {
             -- install missing parsers in the background (no-op when already installed)
             require("nvim-treesitter").install(ts_parsers)
 
-            -- folds (provided by Neovim core)
-            vim.opt.foldmethod = "expr"
-            vim.opt.foldexpr = "v:lua.vim.treesitter.foldexpr()"
-
             -- highlighting (Neovim core) and indentation (nvim-treesitter, experimental)
             vim.api.nvim_create_autocmd("FileType", {
                 callback = function()

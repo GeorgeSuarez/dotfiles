@@ -2,10 +2,12 @@
   "lastChangelogVersion": "0.84.2",
   "theme": "dark",
   "defaultProvider": "opencode-go",
-  "defaultModel": "deepseek-v4-flash",
-  "defaultThinkingLevel": "high",
+  "defaultModel": "ox-alpha-free",
+  "defaultThinkingLevel": "max",
   "packages": [
-    "npm:@nicknisi/pi-cloak"
+    "npm:@nicknisi/pi-cloak",
+    "npm:@plannotator/pi-extension",
+    "git:github.com/DietrichGebert/ponytail"
   ],
   "extensions": [],
   "enableInstallTelemetry": false,
