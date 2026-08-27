@@ -48,17 +48,20 @@ export default function statusLine(pi: ExtensionAPI) {
 					const contextColor: "success" | "warning" | "error" =
 						percent !== null && percent >= 90 ? "error" : percent !== null && percent >= 75 ? "warning" : "success";
 
+					const cwd = process.cwd().replace(new RegExp(`^${process.env.HOME}`), "~");
 					const branch = footerData.getGitBranch();
 					const model = ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : "no-model";
 					const thinking = ctx.thinkingLevel && ctx.thinkingLevel !== "off" ? ` ${ctx.thinkingLevel}` : "";
 					const extensionStatuses = [...footerData.getExtensionStatuses().values()].filter(Boolean);
 					const branchPart = branch ? theme.fg("accent", `git:${branch}`) : theme.fg("dim", "git:-");
+					const cwdPart = theme.fg("dim", cwd);
 					const contextPart = theme.fg(contextColor, `ctx ${contextLabel}`);
 					const costPart = theme.fg("muted", `$${usage.cost.toFixed(3)}`);
 					const modelPart = theme.fg("text", `${model}${thinking}`);
 					const separator = theme.fg("dim", " · ");
 
 					const detailLeft = [
+						cwdPart,
 						branchPart,
 						contextPart,
 						theme.fg("dim", `↑${compactNumber(usage.input)} ↓${compactNumber(usage.output)}`),
@@ -72,7 +75,7 @@ export default function statusLine(pi: ExtensionAPI) {
 
 					if (visibleWidth(full) <= width) return [full];
 
-					const compact = `${branch ? theme.fg("accent", branch) : "-"}${separator}${contextPart}${separator}${costPart}${separator}${modelPart}`;
+					const compact = `${cwd}${separator}${branch ? theme.fg("accent", branch) : "-"}${separator}${contextPart}${separator}${costPart}${separator}${modelPart}`;
 					return [truncateToWidth(compact, width, "…")];
 				},
 			};

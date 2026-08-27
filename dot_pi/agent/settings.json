@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "0.84.2",
+  "lastChangelogVersion": "0.84.3",
   "theme": "dark",
   "defaultProvider": "opencode-go",
   "defaultModel": "ox-alpha-free",
@@ -7,7 +7,8 @@
   "packages": [
     "npm:@nicknisi/pi-cloak",
     "npm:@plannotator/pi-extension",
-    "git:github.com/DietrichGebert/ponytail"
+    "git:github.com/DietrichGebert/ponytail",
+    "npm:@ff-labs/pi-fff"
   ],
   "extensions": [],
   "enableInstallTelemetry": false,
