@@ -51,31 +51,32 @@ export default function statusLine(pi: ExtensionAPI) {
 					const cwd = process.cwd().replace(new RegExp(`^${process.env.HOME}`), "~");
 					const branch = footerData.getGitBranch();
 					const model = ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : "no-model";
-					const thinking = ctx.thinkingLevel && ctx.thinkingLevel !== "off" ? ` ${ctx.thinkingLevel}` : "";
+					const thinkingLevel = ctx.thinkingLevel && ctx.thinkingLevel !== "off" ? ctx.thinkingLevel : null;
 					const extensionStatuses = [...footerData.getExtensionStatuses().values()].filter(Boolean);
-					const branchPart = branch ? theme.fg("accent", `git:${branch}`) : theme.fg("dim", "git:-");
-					const cwdPart = theme.fg("dim", cwd);
+					const branchPart = branch ? theme.bold(theme.fg("customMessageLabel", `⎇ ${branch}`)) : theme.fg("dim", "⎇ -");
+					const cwdPart = theme.fg("syntaxFunction", cwd);
 					const contextPart = theme.fg(contextColor, `ctx ${contextLabel}`);
-					const costPart = theme.fg("muted", `$${usage.cost.toFixed(3)}`);
-					const modelPart = theme.fg("text", `${model}${thinking}`);
-					const separator = theme.fg("dim", " · ");
+					const costPart = theme.fg("success", `$${usage.cost.toFixed(3)}`);
+					const modelPart = theme.bold(theme.fg("mdHeading", model));
+					const thinkingPart = thinkingLevel ? ` ${theme.fg("thinkingMedium", thinkingLevel)}` : "";
+					const separator = theme.fg("borderMuted", " · ");
 
 					const detailLeft = [
 						cwdPart,
 						branchPart,
 						contextPart,
-						theme.fg("dim", `↑${compactNumber(usage.input)} ↓${compactNumber(usage.output)}`),
+						theme.fg("syntaxNumber", `↑${compactNumber(usage.input)} ↓${compactNumber(usage.output)}`),
 						costPart,
 					].join(separator);
 					const statusPart = extensionStatuses.length > 0
 						? `${extensionStatuses.slice(0, 2).join(separator)}${extensionStatuses.length > 2 ? separator + theme.fg("dim", `+${extensionStatuses.length - 2}`) : ""}`
 						: "";
 					const right = [statusPart, modelPart].filter(Boolean).join(separator);
-					const full = right ? `${detailLeft}${separator}${right}` : detailLeft;
+					const full = right ? `${detailLeft}${separator}${right}${thinkingPart}` : `${detailLeft}${thinkingPart}`;
 
 					if (visibleWidth(full) <= width) return [full];
 
-					const compact = `${cwd}${separator}${branch ? theme.fg("accent", branch) : "-"}${separator}${contextPart}${separator}${costPart}${separator}${modelPart}`;
+					const compact = `${cwdPart}${separator}${branch ? theme.fg("customMessageLabel", branch) : "-"}${separator}${contextPart}${separator}${costPart}${separator}${modelPart}`;
 					return [truncateToWidth(compact, width, "…")];
 				},
 			};

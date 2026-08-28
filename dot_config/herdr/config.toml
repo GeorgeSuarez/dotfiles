@@ -229,6 +229,7 @@ confirm_close = false
 # Background notification popup delivery
 show_agent_labels_on_pane_borders = true
 status_indicators = "dots"
+agent_panel_sort = "spaces"
 [ui.toast]
 # off = disable pop-up notifications
 # herdr = show in-app toasts
@@ -237,7 +238,7 @@ status_indicators = "dots"
 # delivery = "off"
 # delay_seconds = 1
 
-delivery = "herdr"
+delivery = "system"
 [ui.toast.herdr]
 # position = "bottom-right"
 

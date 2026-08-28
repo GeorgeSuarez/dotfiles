@@ -2,8 +2,22 @@
   "lastChangelogVersion": "0.84.3",
   "theme": "dark",
   "defaultProvider": "opencode-go",
-  "defaultModel": "ox-alpha-free",
+  "defaultModel": "glm-5.3-flash",
   "defaultThinkingLevel": "max",
+  "enabledModels": ["opencode-go/glm-5.3-flash", "opencode-go/gpt-5.6-luna"],
+  "thinkingBudgets": {
+    "minimal": 1024,
+    "low": 4096,
+    "medium": 10240,
+    "high": 32768
+  },
+  "retry": {
+    "provider": {
+      "maxRetries": 0,
+      "maxRetryDelayMs": 60000
+    }
+  },
+  "shellCommandPrefix": "shopt -s expand_aliases\neval \"$(grep '^alias ' ~/.zshrc)\"",
   "packages": [
     "npm:@nicknisi/pi-cloak",
     "npm:@plannotator/pi-extension",

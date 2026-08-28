@@ -1,0 +1,20 @@
+{
+  "name": "pi-save-md-extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "npm run typecheck",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.2",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  },
+  "pi": {
+    "extensions": [
+      "./save-md.ts"
+    ]
+  }
+}

@@ -3,26 +3,11 @@ import { mkdir, readdir, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, join } from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { matchDangerousCommand } from "./lib/dangerous-commands.ts";
 
 const CHECKPOINTS_DIR = join(homedir(), ".pi", "agent", "checkpoints");
 const HANDOFF_FILE = join(".pi", "HANDOFF.md");
 const MAX_HANDOFF_MESSAGE_LENGTH = 3_000;
-
-const dangerousCommands: Array<{ pattern: RegExp; reason: string }> = [
-	{ pattern: /\brm\s+(?:-[^\s]*r|--recursive)/i, reason: "recursive deletion" },
-	{ pattern: /\bsudo\b/i, reason: "elevated privileges" },
-	{ pattern: /\b(?:git\s+)?reset\s+--hard\b/i, reason: "discarding tracked changes" },
-	{ pattern: /\bgit\s+clean\s+-[^\n]*f/i, reason: "deleting untracked files" },
-	{ pattern: /\b(?:git\s+)?(?:checkout|restore)\s+--/i, reason: "overwriting working-tree files" },
-	{ pattern: /\b(?:chmod|chown)\b[^\n]*\b777\b/i, reason: "opening permissions broadly" },
-	{ pattern: /\b(?:mkfs|diskutil\s+erase|dd\s+if=)/i, reason: "disk-level changes" },
-	{ pattern: /\b(?:terraform|pulumi)\s+destroy\b/i, reason: "destroying infrastructure" },
-	{ pattern: /\bdocker\s+system\s+prune\b/i, reason: "removing Docker resources" },
-	{
-		pattern: /(?:>|>>|\b(?:cp|mv|rm)\b)[^\n]*(?:^|[\s/])(?:\.env(?:\.[\w.-]+)?|.*\.(?:pem|key|p12|pfx))\b/i,
-		reason: "modifying likely secret material",
-	},
-];
 
 const protectedPath = /(?:^|\/)\.env(?:\.[^/]+)?$|(?:^|\/)(?:private_(?:auth|models-store)\.json|auth\.json|credentials?\.[^/]+|secrets?\.[^/]+)$|\.(?:pem|key|p12|pfx)$/i;
 
@@ -110,8 +95,8 @@ function commandForTool(event: { toolName: string; input: unknown }): { reason: 
 	const input = (event.input ?? {}) as Record<string, unknown>;
 	if (event.toolName === "bash") {
 		const command = typeof input.command === "string" ? input.command : "";
-		const match = dangerousCommands.find(({ pattern }) => pattern.test(command));
-		if (match) return { reason: match.reason, preview: command };
+		const risky = matchDangerousCommand(command);
+		if (risky) return { reason: risky.reason, preview: command };
 	}
 
 	if (event.toolName === "write" || event.toolName === "edit") {

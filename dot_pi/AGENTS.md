@@ -17,6 +17,8 @@ Pi auto-discovers TypeScript extensions from `~/.pi/agent/extensions/`. The loca
 ```text
 agent/
 ├── extensions/       Pi extensions and extension README
+├── prompts/          Prompt templates exposed as /commands
+├── keybindings.json  Session/editor keybinding overrides
 ├── settings.json     Pi defaults and installed package configuration
 ├── auth.json         Sensitive authentication data; do not read or modify casually
 ├── cloak.json        Sensitive/package-specific configuration; treat as protected
@@ -38,9 +40,11 @@ Do not inspect or expose authentication files, session history, API keys, or oth
 
 - Dark theme
 - `opencode-go` as the default provider
-- `gpt-5.6-luna` as the default model
-- High default thinking level
-- `npm:@nicknisi/pi-cloak` as an installed package
+- `glm-5.3-flash` as the default model with `max` default thinking level
+- `enabledModels` for Ctrl+P cycling across `opencode-go` models
+- `thinkingBudgets` per thinking level and provider-level retry caps (`retry.provider`)
+- `shellCommandPrefix` that exposes the user's zsh aliases to the bash tool
+- Packages: `npm:@nicknisi/pi-cloak`, `npm:@plannotator/pi-extension`, `git:github.com/DietrichGebert/ponytail`, `npm:@ff-labs/pi-fff`
 - Regular TUI mode
 - No explicit extension paths; extensions are discovered from the global extension directory
 
@@ -83,6 +87,17 @@ Use the tool `signal` for network/process cancellation. Bound external output be
 - `git-interceptor.ts` — Prevents `git --no-verify` and prefixes Git commands with non-interactive editor settings.
 - `protected-paths.ts` — Blocks protected-path writes and asks for confirmation before destructive commands. Protected paths include secrets, credentials, SSH/AWS directories, `.git`, `node_modules`, and private-key file suffixes.
 - `whimiscal.ts` — Customizes Pi's working messages.
+- `pi-workflow.ts` — `/project`, `/checkpoint`, `/checkpoints`, `/restore`, `/handoff`, `/stats`; confirms dangerous commands and protected-path edits from the LLM via the shared list in `lib/dangerous-commands.ts`.
+- `action-notifications.ts` — Detects action-required assistant messages and notifies via terminal/UI/Hark; exposes `ask_user_on_iphone`.
+- `herdr-agent-state.ts` — Herdr multiplexer integration (installed by Herdr).
+- `save-md/save-md.ts` — Saves assistant messages to Markdown files.
+- `cheap-compaction.ts` — `session_before_compact` generates summaries with `PI_COMPACTION_MODEL` (default `opencode-go/ox-alpha-free`) and falls back to default compaction on failure.
+- `context-pruner.ts` — `context` event replaces oversized old `toolResult` content with placeholders; errors and recent turns are never pruned.
+- `user-bash-guard.ts` — `user_bash` event confirms or blocks the user's own `!`/`!!` commands against the shared dangerous-command list.
+- `session-namer.ts` — Names the session from the first non-command user message via `pi.setSessionName`.
+- `issue-autocomplete.ts` — `#` autocomplete of open GitHub issues, adapted from pi's example.
+- `ci-watcher.ts` — `/watch [branch|pr] [seconds]` polls `gh run list` and injects the conclusion via `sendMessage` with `triggerTurn` when the run completes; `/unwatch` stops it.
+- `presets.ts` — `/preset save|list|off` and `/preset <name>` apply saved model/thinking/tools combinations, persisted in session entries.
 
 ## Useful commands
 
@@ -97,9 +112,12 @@ Use the tool `signal` for network/process cancellation. Bound external output be
 /github pr ...        Inspect pull requests
 /github checks ...    Inspect CI checks
 /tools                List or activate tools
-/providers             Show local provider configuration
+/providers            Show local provider configuration
 /fallback             Switch to a configured fallback model
 /status-line          Toggle the enhanced footer
+/watch [ref]          Watch GitHub Actions for a branch or PR
+/unwatch              Stop watching CI
+/preset [name|save|list|off]  Switch model/thinking/tools presets
 ```
 
 ## Environment configuration

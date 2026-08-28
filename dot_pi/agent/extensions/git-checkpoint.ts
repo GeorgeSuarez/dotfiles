@@ -1,4 +1,5 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { Text } from "@earendil-works/pi-tui";
 
 interface Checkpoint {
 	id: string;
@@ -9,6 +10,17 @@ interface Checkpoint {
 
 export default function gitCheckpoint(pi: ExtensionAPI) {
 	const checkpoints: Checkpoint[] = [];
+
+	// Render checkpoint entries in the transcript (entries stay out of LLM context)
+	pi.registerEntryRenderer("git-checkpoint", (entry, _options, theme) => {
+		const data = entry.data as { id: string; label?: string; ref: string };
+		return new Text(theme.fg("dim", `⎇ checkpoint ${data.id} · ${data.label ?? "auto"} · ref ${data.ref.slice(0, 12)}`));
+	});
+
+	function labelLastEntry(ctx: ExtensionContext, label: string): void {
+		const last = ctx.sessionManager.getEntries().at(-1);
+		if (last?.type === "custom" && last.customType === "git-checkpoint") pi.setLabel(last.id, label);
+	}
 
 	async function createCheckpoint(ctx?: ExtensionContext, label = "automatic"): Promise<Checkpoint | undefined> {
 		const status = await pi.exec("git", ["rev-parse", "--show-toplevel"]);
@@ -38,6 +50,7 @@ export default function gitCheckpoint(pi: ExtensionAPI) {
 		description: "Create a Git checkpoint of current uncommitted changes",
 		handler: async (_args, ctx) => {
 			const checkpoint = await createCheckpoint(ctx, "manual");
+			if (checkpoint) labelLastEntry(ctx, `checkpoint: ${checkpoint.id}`);
 			ctx.ui.notify(checkpoint ? `Checkpoint created: ${checkpoint.id}` : "No Git changes to checkpoint", checkpoint ? "info" : "warning");
 		},
 	});
