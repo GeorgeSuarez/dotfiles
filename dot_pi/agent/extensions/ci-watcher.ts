@@ -1,4 +1,4 @@
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 
 /**
  * Watches the latest GitHub Actions run for a branch and injects the result into
@@ -29,11 +29,23 @@ export default function ciWatcher(pi: ExtensionAPI) {
 	let timer: ReturnType<typeof setInterval> | undefined;
 	let branch: string | undefined;
 	let cwd: string | undefined;
+	let uiCtx: ExtensionContext | undefined;
+	let runStatus: string | undefined;
+
+	function installWidget(): void {
+		if (!uiCtx || !branch) return;
+		uiCtx.ui.setWidget("ci-watcher", (_tui, theme) => ({
+			render: () => [theme.fg("accent", "⟳ CI ") + theme.fg("muted", `${branch} · ${runStatus ?? "watching"} · /unwatch to stop`)],
+			invalidate: () => {},
+		}));
+	}
 
 	function stop(): void {
 		if (timer) clearInterval(timer);
 		timer = undefined;
 		branch = undefined;
+		runStatus = undefined;
+		uiCtx?.ui.setWidget("ci-watcher", undefined);
 	}
 
 	pi.registerCommand("watch", {
@@ -67,7 +79,10 @@ export default function ciWatcher(pi: ExtensionAPI) {
 			stop();
 			branch = ref;
 			cwd = ctx.cwd;
+			uiCtx = ctx;
+			runStatus = undefined;
 			ctx.ui.setStatus("ci-watcher", `watching CI: ${ref} (every ${Math.round(intervalMs / 1000)}s)`);
+			installWidget();
 
 			const poll = async (): Promise<void> => {
 				if (!branch || !cwd) return;
@@ -83,7 +98,9 @@ export default function ciWatcher(pi: ExtensionAPI) {
 				const run = parseSnapshot(result.stdout);
 				if (!run) return;
 				if (run.status !== "completed") {
+					runStatus = run.status;
 					ctx.ui.setStatus("ci-watcher", `CI ${run.status}: ${branch}`);
+					installWidget();
 					return;
 				}
 

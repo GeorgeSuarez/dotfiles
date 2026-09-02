@@ -53,6 +53,7 @@ return {
                 -- linters
                 "ruff",
                 "oxlint",
+                "eslint_d",
                 "swiftlint",
             },
         })

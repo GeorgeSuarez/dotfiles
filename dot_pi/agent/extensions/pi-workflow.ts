@@ -3,13 +3,10 @@ import { mkdir, readdir, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, join } from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { matchDangerousCommand } from "./lib/dangerous-commands.ts";
 
 const CHECKPOINTS_DIR = join(homedir(), ".pi", "agent", "checkpoints");
 const HANDOFF_FILE = join(".pi", "HANDOFF.md");
 const MAX_HANDOFF_MESSAGE_LENGTH = 3_000;
-
-const protectedPath = /(?:^|\/)\.env(?:\.[^/]+)?$|(?:^|\/)(?:private_(?:auth|models-store)\.json|auth\.json|credentials?\.[^/]+|secrets?\.[^/]+)$|\.(?:pem|key|p12|pfx)$/i;
 
 interface GitState {
 	branch: string;
@@ -86,27 +83,9 @@ function statusSummary(state: GitState | undefined): string {
 	return `${state.branch} · ${changed} changed file${changed === 1 ? "" : "s"}`;
 }
 
-function updateStatus(ctx: ExtensionContext, turns: number, tools: number, blocked: number, checkpoint?: string): void {
+function updateStatus(ctx: ExtensionContext, turns: number, tools: number, checkpoint?: string): void {
 	const suffix = checkpoint ? ` · saved ${checkpoint}` : "";
-	ctx.ui.setStatus("pi-workflow", `pi · ${turns} turns · ${tools} tools · ${blocked} blocked${suffix}`);
-}
-
-function commandForTool(event: { toolName: string; input: unknown }): { reason: string; preview: string } | undefined {
-	const input = (event.input ?? {}) as Record<string, unknown>;
-	if (event.toolName === "bash") {
-		const command = typeof input.command === "string" ? input.command : "";
-		const risky = matchDangerousCommand(command);
-		if (risky) return { reason: risky.reason, preview: command };
-	}
-
-	if (event.toolName === "write" || event.toolName === "edit") {
-		const path = typeof input.path === "string" ? input.path.replaceAll("\\", "/") : "";
-		if (protectedPath.test(path)) {
-			return { reason: "editing likely secret material", preview: path };
-		}
-	}
-
-	return undefined;
+	ctx.ui.setStatus("pi-workflow", `pi · ${turns} turns · ${tools} tools${suffix}`);
 }
 
 async function saveCheckpoint(pi: ExtensionAPI, ctx: ExtensionContext, label: string): Promise<string | undefined> {
@@ -141,47 +120,23 @@ async function saveCheckpoint(pi: ExtensionAPI, ctx: ExtensionContext, label: st
 export default function piWorkflow(pi: ExtensionAPI) {
 	let turns = 0;
 	let tools = 0;
-	let blocked = 0;
 	let lastCheckpoint: string | undefined;
 
 	const resetSession = (ctx: ExtensionContext) => {
 		turns = 0;
 		tools = 0;
-		blocked = 0;
 		lastCheckpoint = undefined;
-		updateStatus(ctx, turns, tools, blocked);
+		updateStatus(ctx, turns, tools);
 	};
 
 	pi.on("session_start", async (_event, ctx) => resetSession(ctx));
 	pi.on("turn_start", async (_event, ctx) => {
 		turns += 1;
-		updateStatus(ctx, turns, tools, blocked, lastCheckpoint);
+		updateStatus(ctx, turns, tools, lastCheckpoint);
 	});
-	pi.on("tool_call", async (event, ctx) => {
+	pi.on("tool_call", async (_event, ctx) => {
 		tools += 1;
-		const risky = commandForTool(event);
-		if (!risky) {
-			updateStatus(ctx, turns, tools, blocked, lastCheckpoint);
-			return undefined;
-		}
-
-		if (!ctx.hasUI) {
-			blocked += 1;
-			updateStatus(ctx, turns, tools, blocked, lastCheckpoint);
-			return { block: true, reason: `Blocked: ${risky.reason}; no interactive confirmation is available` };
-		}
-
-		const approved = await ctx.ui.confirm(
-			`Pi workflow: ${risky.reason}`,
-			`The agent wants to run or edit:\n\n${risky.preview}\n\nAllow this operation?`,
-		);
-		if (!approved) {
-			blocked += 1;
-			updateStatus(ctx, turns, tools, blocked, lastCheckpoint);
-			return { block: true, reason: "Blocked by user" };
-		}
-		updateStatus(ctx, turns, tools, blocked, lastCheckpoint);
-		return undefined;
+		updateStatus(ctx, turns, tools, lastCheckpoint);
 	});
 
 	pi.registerCommand("project", {
@@ -203,7 +158,7 @@ export default function piWorkflow(pi: ExtensionAPI) {
 			const fileName = await saveCheckpoint(pi, ctx, args);
 			if (!fileName) return;
 			lastCheckpoint = fileName;
-			updateStatus(ctx, turns, tools, blocked, lastCheckpoint);
+			updateStatus(ctx, turns, tools, lastCheckpoint);
 			ctx.ui.notify(`Checkpoint saved: ${fileName}`, "info");
 		},
 	});
@@ -302,12 +257,7 @@ export default function piWorkflow(pi: ExtensionAPI) {
 	pi.registerCommand("stats", {
 		description: "Show Pi workflow counters for this session",
 		handler: async (_args, ctx) => {
-			ctx.ui.notify(
-				[`Turns: ${turns}`, `Tool calls: ${tools}`, `Blocked operations: ${blocked}`, `Last checkpoint: ${lastCheckpoint ?? "none"}`].join(
-					"\n",
-				),
-				"info",
-			);
+			ctx.ui.notify([`Turns: ${turns}`, `Tool calls: ${tools}`, `Last checkpoint: ${lastCheckpoint ?? "none"}`].join("\n"), "info");
 		},
 	});
 }

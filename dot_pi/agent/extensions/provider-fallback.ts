@@ -29,6 +29,7 @@ export default function providerFallback(pi: ExtensionAPI) {
 				if (!target.model) continue;
 				const model = ctx.modelRegistry.find(target.provider, target.model);
 				if (model && await pi.setModel(model)) {
+					ctx.ui.setStatus("fallback", ctx.ui.theme.fg("muted", `fallback ${target.provider}/${model.id}`));
 					ctx.ui.notify(`Switched to fallback ${target.provider}/${model.id}`, "info");
 					return;
 				}

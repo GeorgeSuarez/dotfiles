@@ -24,6 +24,12 @@ return {
 
             require("nvim-dap-virtual-text").setup()
 
+            dap.adapters["lldb-dap"] = {
+                type = "executable",
+                command = "xcrun",
+                args = { "lldb-dap" },
+            }
+
             dap.configurations.cpp = {
                 {
                     name = "Launch",
@@ -46,6 +52,20 @@ return {
             }
 
             dap.configurations.c = dap.configurations.cpp
+
+            dap.configurations.swift = {
+                {
+                    name = "Launch",
+                    type = "lldb-dap",
+                    request = "launch",
+                    program = function()
+                        return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
+                    end,
+                    cwd = "${workspaceFolder}",
+                    stopOnEntry = false,
+                    args = {},
+                },
+            }
 
             dap.listeners.after.event_initialized["dapui_config"] = function()
                 dapui.open()

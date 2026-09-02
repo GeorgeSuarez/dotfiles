@@ -14,7 +14,17 @@ return {
                 end
                 return icon(name, cat, opts)
             end
+
+            -- snacks.input and snacks.picker are enabled via opts below,
+            -- but vim.ui overrides must be deferred until after snacks.setup().
+            vim.schedule(function()
+                if vim.ui.input ~= require("snacks.input").input then
+                    vim.ui.input = require("snacks.input").input
+                end
+                vim.ui.select = require("snacks.picker").select
+            end)
         end, opts = {
+            image = {},
             input = {},
             picker = {
                 sources = {
@@ -25,6 +35,7 @@ return {
             },
             terminal = {},
             explorer = {},
+            notifier = {},
         }, keys = {
             { "<leader>ee", function() require("snacks").explorer() end, desc = "Toggle file explorer" },
             { "<leader>ef", function() require("snacks").explorer.reveal() end, desc = "Reveal current file in explorer" },

@@ -68,6 +68,10 @@ export default function presets(pi: ExtensionAPI) {
 		return parts.join(" · ") || "(current settings)";
 	}
 
+	function updateStatus(ctx: ExtensionContext): void {
+		ctx.ui.setStatus("presets", activeName ? ctx.ui.theme.fg("muted", `preset:${activeName}`) : undefined);
+	}
+
 	pi.registerCommand("preset", {
 		description: "Save, list, apply, or clear model/thinking/tool presets",
 		handler: async (args, ctx) => {
@@ -108,6 +112,7 @@ export default function presets(pi: ExtensionAPI) {
 				pi.setActiveTools(originalState.tools);
 				activeName = undefined;
 				pi.appendEntry("preset-state", { active: "" });
+				updateStatus(ctx);
 				ctx.ui.notify("Preset cleared; original settings restored", "info");
 				return;
 			}
@@ -118,6 +123,7 @@ export default function presets(pi: ExtensionAPI) {
 				return;
 			}
 			await applyPreset(subcommand, preset, ctx);
+			updateStatus(ctx);
 			ctx.ui.notify(`Preset "${subcommand}" activated`, "info");
 		},
 	});
@@ -129,5 +135,6 @@ export default function presets(pi: ExtensionAPI) {
 			if (data.saved) saved.set(data.saved.name, data.saved.preset);
 			if (data.active !== undefined) activeName = data.active || undefined;
 		}
+		updateStatus(ctx);
 	});
 }

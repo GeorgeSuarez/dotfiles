@@ -19,4 +19,7 @@ require("lazy").setup({ { import = "georsuar.plugins" }, { import = "georsuar.pl
     change_detection = {
         notify = false,
     },
+    rocks = {
+        hererocks = false,
+    },
 })
