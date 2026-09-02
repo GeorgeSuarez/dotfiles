@@ -11,7 +11,7 @@ const ACTION_MARKER = /\[\[\s*PI_ACTION_REQUIRED\s*:\s*([\s\S]*?)\s*\]\]/i;
 const ACTION_MARKER_GLOBAL = /\[\[\s*PI_ACTION_REQUIRED\s*:\s*[\s\S]*?\s*\]\]\s*/gi;
 const MAX_NOTIFICATION_LENGTH = 240;
 const DEFAULT_HARK_TIMEOUT_SECONDS = 900;
-const HARK_POLL_INTERVAL_MS = 2_000;
+const HARK_POLL_INTERVAL_MS = 3_000;
 
 const ACTION_WORDS = [
 	"please",
@@ -169,7 +169,7 @@ async function notifyHark(ctx: ExtensionContext, summary: string): Promise<void>
 	}
 
 	try {
-		await client.send(
+		const result = await client.send(
 			{
 				title: process.env.PI_HARK_TITLE?.trim() || "Pi",
 				project: process.env.PI_HARK_PROJECT?.trim() || "Pi",
@@ -179,6 +179,9 @@ async function notifyHark(ctx: ExtensionContext, summary: string): Promise<void>
 			},
 			{ idempotencyKey: sessionKey(ctx, "pi-action") },
 		);
+		if (result.delivered === 0 && ctx.hasUI) {
+			ctx.ui.notify("Hark sent but no iPhone is registered for this service (delivered: 0)", "warning");
+		}
 	} catch (error) {
 		const status = typeof error === "object" && error && "status" in error
 			? ` (HTTP ${(error as { status: unknown }).status})`
@@ -244,7 +247,7 @@ async function waitForHarkResponse(
 		await client.cancelResponse(eventId).catch(() => undefined);
 		return {
 			...latest,
-			response: { ...latest.response, status: "canceled", action: undefined, text: null },
+			response: { ...latest.response, status: "expired", action: undefined, text: null },
 		};
 	}
 	return latest;
@@ -254,8 +257,7 @@ export default function actionNotifications(pi: ExtensionAPI) {
 	let enabled = process.env.PI_ACTION_NOTIFICATIONS !== "off";
 	let latestAssistantText = "";
 
-	if (harkConfigured()) {
-		pi.registerTool({
+	pi.registerTool({
 		name: "ask_user_on_iphone",
 		label: "Ask User on iPhone",
 		description: "Ask the user an approval, yes/no, or text question through Hark on their iPhone and wait for the response.",
@@ -282,7 +284,7 @@ export default function actionNotifications(pi: ExtensionAPI) {
 					title: process.env.PI_HARK_TITLE?.trim() || "Pi",
 					project: process.env.PI_HARK_PROJECT?.trim() || "Pi",
 					url: process.env.PI_HARK_TAP_URL?.trim() || undefined,
-					body: params.question.trim(),
+					body: params.question.trim().slice(0, 2_000),
 					summary: params.question.trim().slice(0, 500),
 					response: { type: responseType, expiresInSeconds: timeoutSeconds, correlationId },
 				},
@@ -293,6 +295,17 @@ export default function actionNotifications(pi: ExtensionAPI) {
 
 			try {
 				const result = await waitForHarkResponse(client, event.eventId, timeoutSeconds, operationSignal);
+				if (result.response.status === "expired") {
+					return {
+						content: [{ type: "text", text: `Timed out after ${timeoutSeconds}s waiting for iPhone response (no reply, expired)` }],
+						details: {
+							status: result.response.status,
+							action: result.response.action,
+							text: result.response.text,
+							correlationId: result.response.correlationId,
+						},
+					};
+				}
 				return {
 					content: [{ type: "text", text: `User response: ${responseText(result)}` }],
 					details: {
@@ -312,7 +325,6 @@ export default function actionNotifications(pi: ExtensionAPI) {
 			}
 		},
 		});
-	}
 
 	pi.registerCommand("action-notifications", {
 		description: "Enable, disable, inspect, or test LLM action-required notifications",
