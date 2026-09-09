@@ -26,3 +26,16 @@ keymap.set("n", "<leader>tx", "<cmd>tabclose<CR>", { desc = "Close current tab" 
 keymap.set("n", "<leader>tn", "<cmd>tabn<CR>", { desc = "Go to next tab" }) --  go to next tab
 keymap.set("n", "<leader>tp", "<cmd>tabp<CR>", { desc = "Go to previous tab" }) --  go to previous tab
 keymap.set("n", "<leader>tf", "<cmd>tabnew %<CR>", { desc = "Open current buffer in new tab" }) --  move current buffer to new tab
+
+keymap.set("x", "<leader>a", function()
+    -- Hand the selection to the plugin through a file: works on headless servers too.
+    vim.cmd('normal! "zy')
+    local base = os.getenv("XDG_RUNTIME_DIR")
+    if not base or base == "" then
+        base = vim.fn.fnamemodify(vim.fn.tempname(), ":h")
+    end
+    local dir = base .. "/herdr-annotate-" .. vim.loop.getuid()
+    vim.fn.mkdir(dir, "p", "0700")
+    vim.fn.writefile(vim.split(vim.fn.getreg("z"), "\n"), dir .. "/selection")
+    vim.fn.jobstart({ "herdr", "plugin", "action", "invoke", "annotate.capture" })
+end, { desc = "Annotate in Herdr" })

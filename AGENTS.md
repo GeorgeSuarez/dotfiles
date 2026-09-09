@@ -5,7 +5,6 @@ macOS dotfiles managed with [chezmoi](https://chezmoi.io). Tooling comes from th
 ## Chezmoi naming (files here are NOT named like the files they manage)
 
 - `dot_*` → `~/.` (e.g. `dot_zshrc` → `~/.zshrc`); a `dot_config/` dir → `~/.config/` (nvim, opencode, herdr)
-- `private_*` → applied with mode 0600; `private_Library/private_Application Support/` → `~/Library/Application Support/` (ghostty)
 - No `.tmpl` templates are used; never add one without introducing template data too
 - `dot_pi/` is not a Raspberry Pi's config, but a config for the Pi agent harness
 

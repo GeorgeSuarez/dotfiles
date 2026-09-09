@@ -2,8 +2,11 @@
   "name": "pi-extensions",
   "private": true,
   "dependencies": {
-    "@ff-labs/pi-fff": "^0.10.5",
+    "@ff-labs/pi-fff": "^0.10.6",
+    "@narumitw/pi-usage": "^0.60.3",
     "@nicknisi/pi-cloak": "^0.1.2",
-    "@plannotator/pi-extension": "^0.27.9"
+    "@plannotator/pi-extension": "^0.27.12",
+    "pi-mcp-adapter": "^2.32.1",
+    "pi-opencode-free": "^0.2.0"
   }
 }
