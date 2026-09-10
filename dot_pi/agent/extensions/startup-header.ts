@@ -144,7 +144,7 @@ function buildTable(_theme: Theme, width: number, loaded: LoadedInfo): string[] 
   // left padding on the shorter rows would jog the stem and break the P.
   const fitLogo = (s: string) => tnText(truncateToWidth(s, logoWidth).padEnd(logoWidth));
   const entries: Array<{ text: string; color: (s: string) => string }> = [
-    { text: `${VERSION}`, color: tnBoldBlue },
+    { text: `Version: ${VERSION}`, color: tnBoldBlue },
     {
       text: `Context: ${loaded.agents}`,
       color: (s) => (loaded.agents === "none" ? tnComment(s) : tnPurple(s)),
@@ -153,7 +153,7 @@ function buildTable(_theme: Theme, width: number, loaded: LoadedInfo): string[] 
       text: `MCP(s): ${loaded.mcps}`,
       color: (s) => (loaded.mcps === "none" ? tnComment(s) : tnGreen(s)),
     },
-    { text: `Tools: ${loaded.tools}`, color: tnCyan },
+    { text: `Tool(s): ${loaded.tools}`, color: tnCyan },
     { text: `Skill(s): ${loaded.skills}`, color: tnYellow },
   ];
   const sep = (l: string, m: string, r: string) =>
