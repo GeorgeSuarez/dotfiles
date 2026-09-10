@@ -15,6 +15,7 @@ brew "zsh-autosuggestions"
 brew "zsh-syntax-highlighting"
 brew "powerlevel10k"
 brew "herdr"
+brew "bitwarden-cli"
 
 # GUI apps
 cask "ghostty"
