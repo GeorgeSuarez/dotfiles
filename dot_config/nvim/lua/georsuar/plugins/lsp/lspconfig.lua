@@ -139,12 +139,12 @@ return {
         })
         vim.lsp.enable("vtsls")
 
-        -- Roslyn C# language server (installed via the "roslyn" mason package)
-        vim.lsp.config("roslyn", {
-            cmd = { vim.fn.stdpath("data") .. "/mason/bin/roslyn-language-server", "--stdio" },
-            filetypes = { "cs", "csharp" },
-            root_markers = { ".sln", ".slnx", ".csproj", ".slnf", "global.json" },
+        -- Roslyn C# language server (mason: roslyn-language-server).
+        -- Uses lspconfig's "roslyn_ls" config (auto-enabled by mason-lspconfig).
+        -- Homebrew's dotnet shim in Cellar/dotnet/*/bin breaks the tool apphost's
+        -- runtime lookup, so put the real muxer first on PATH.
+        vim.lsp.config("roslyn_ls", {
+            cmd_env = { PATH = "/opt/homebrew/opt/dotnet/libexec:" .. vim.env.PATH },
         })
-        vim.lsp.enable("roslyn")
     end,
 }
