@@ -42,6 +42,9 @@ alias oc2="opencode2"
 #   2. `chezmoi re-add <file>` only the files you intend to keep
 #   3. `chezmoi apply` to push source -> live
 #   4. `push-dotfiles` to commit + push (never `git add -A`; secrets are gitignored but stay cautious)
+# NOTE: `push-dotfiles` used to be an alias. A stale alias in a running
+# shell breaks the function definition below on re-source, so clear first.
+unalias push-dotfiles dotrepo 2>/dev/null || true
 dotrepo() { cd "$(dirname "$(chezmoi source-path)")"; }
 alias dotdiff='chezmoi status && chezmoi diff'
 alias sync-dotfiles='chezmoi diff && chezmoi apply'
