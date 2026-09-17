@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { htmlToText } from "../agent/extensions/web.ts";
+import { htmlToText } from "../agent/extensions/web-tools.ts";
 import actionNotifications, { assistantText, detectActionRequired } from "../agent/extensions/action-notifications.ts";
 import { createHarkClient } from "../agent/extensions/lib/hark-client.ts";
 

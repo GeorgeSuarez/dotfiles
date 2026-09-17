@@ -9,12 +9,12 @@ import {
   loadProjectContextFiles,
   loadSkills,
 } from "@earendil-works/pi-coding-agent";
-import { truncateToWidth, visibleWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
+import { truncateToWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
 
 /**
  * Startup header as a table with the official Pi logo (pi.dev/logo-auto.svg)
- * in its own column and version, AGENTS.md, MCP servers, tools, and skills
- * alongside it.
+ * in its own column and version, model, cwd, AGENTS.md, MCP servers, tools,
+ * skills alongside it.
  * Pair with `quietStartup: true`, which hides the built-in header plus the
  * [Context]/[Skills]/[Prompts]/[Extensions]/[Themes] lists.
  * `pi --verbose` still forces full output.
@@ -31,17 +31,35 @@ function getPiLogoRows(): string[] {
   return rows.flatMap((row) => [row, row]);
 }
 
-/** "name (n tools)" per server, from the mcp-cache shape. Pure for testing. */
+/** Cap long lists so the header stays a fixed height. Pure for testing. */
+export const MAX_VISIBLE_ITEMS = 8;
+
+/** "(n) a, b, c" or "(n) a, b +k more" when truncated. Pure for testing. */
+export function formatNameList(names: string[]): string {
+  if (names.length === 0) return "none";
+  const sorted = [...names].sort();
+  if (sorted.length <= MAX_VISIBLE_ITEMS) return `(${sorted.length}) ${sorted.join(", ")}`;
+  const visible = sorted.slice(0, MAX_VISIBLE_ITEMS);
+  return `(${sorted.length}) ${visible.join(", ")} +${sorted.length - visible.length} more`;
+}
+
+/** "(n) name" per server, sorted by name, from the mcp-cache shape. Pure for testing. */
 export function formatMcpEntries(
   servers: Record<string, { tools?: unknown[] } | undefined> | undefined,
 ): string[] {
   if (!servers) return [];
-  return Object.entries(servers).map(([name, s]) =>
-    Array.isArray(s?.tools) ? `(${s.tools.length}) ${name}` : name,
-  );
+  return Object.entries(servers)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([name, s]) => (Array.isArray(s?.tools) ? `(${s.tools.length}) ${name}` : name));
 }
 
-// ponytail: cache-only snapshot, no live MCP status; re-read per render if the header ever becomes reactive.
+export function formatMcpDisplay(
+  servers: Record<string, { tools?: unknown[] } | undefined> | undefined,
+): string {
+  return formatNameList(formatMcpEntries(servers));
+}
+
+// Cache-only snapshot, no live MCP status; re-read per snapshot.
 function readMcpEntries(): string[] {
   try {
     const raw = readFileSync(join(getAgentDir(), "mcp-cache.json"), "utf8");
@@ -58,8 +76,8 @@ function readMcpEntries(): string[] {
  * Disk scan via pi's own loader: user dir (<agentDir>/skills) plus project
  * dir (<cwd>/.pi/skills). The catalogue isn't built until the first turn,
  * so this gives the header a real count at startup.
- * ponytail: misses package/git skills (ponytail, plannotator); before_agent_start
- * replaces this with pi's authoritative catalogue after the first turn.
+ * Misses package/git skills; before_agent_start replaces this with pi's
+ * authoritative catalogue after the first turn.
  */
 export function scanSkills(cwd: string, agentDir = getAgentDir()): Skill[] {
   try {
@@ -74,9 +92,8 @@ export function scanSkills(cwd: string, agentDir = getAgentDir()): Skill[] {
  * cwd, first of AGENTS.override.md / AGENTS.md / CLAUDE.md per dir. The
  * context files aren't known until the first turn, so this gives the header
  * a real answer at startup.
- * ponytail: misses the git-worktree shadow rule's nuance and any host
- * overrides; before_agent_start replaces this with pi's authoritative
- * contextFiles after the first turn.
+ * before_agent_start replaces this with pi's authoritative contextFiles
+ * after the first turn.
  */
 export function scanAgentsFiles(
   cwd: string,
@@ -103,7 +120,10 @@ function isExtensionDir(dir: string): boolean {
 
 function scanExtensionPaths(cwd: string, agentDir = getAgentDir()): string[] {
   const found: string[] = [];
-  for (const dir of [join(agentDir, "extensions"), join(cwd, CONFIG_DIR_NAME, "extensions")]) {
+  const dirs = cwd
+    ? [join(agentDir, "extensions"), join(cwd, CONFIG_DIR_NAME, "extensions")]
+    : [join(agentDir, "extensions")];
+  for (const dir of dirs) {
     let entries: Dirent[];
     try {
       entries = readdirSync(dir, { withFileTypes: true });
@@ -123,9 +143,10 @@ function scanExtensionPaths(cwd: string, agentDir = getAgentDir()): string[] {
       }
     }
   }
+  return found;
 }
 
-function extensionDisplayName(extPath: string): string {
+export function extensionDisplayName(extPath: string): string {
   const parts = extPath.replace(/\\/g, "/").split("/");
   const nm = parts.lastIndexOf("node_modules");
   const after = nm >= 0 ? parts[nm + 1] : undefined;
@@ -145,7 +166,16 @@ export function displayPath(path: string, cwd: string): string {
   return path.startsWith(home) ? `~${path.slice(home.length)}` : path;
 }
 
-interface LoadedInfo {
+/** Shorten cwd itself: ~/ when under home, otherwise full. */
+export function displayCwd(cwd: string): string {
+  const home = homedir();
+  if (!cwd) return "none";
+  return cwd.startsWith(home) ? `~${cwd.slice(home.length)}` : cwd;
+}
+
+export interface LoadedInfo {
+  model: string;
+  cwdDir: string;
   mcps: string;
   tools: string;
   skills: string;
@@ -154,8 +184,8 @@ interface LoadedInfo {
 }
 
 /**
- * Fixed Tokyo Night (Storm) palette for the header, independent of the
- * active pi theme — the rest of the UI keeps following the pi theme.
+ * @deprecated Fixed palette kept for backwards-compat imports only.
+ * The header now follows the active pi theme via `theme.fg`/`theme.bold`.
  */
 export const TOKYO_NIGHT = {
   text: "#c0caf5",
@@ -169,52 +199,42 @@ export const TOKYO_NIGHT = {
   orange: "#ff9e64",
 } as const;
 
-function paint(hex: string): (s: string) => string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return (s) => `\x1b[38;2;${r};${g};${b}m${s}\x1b[39m`;
-}
-
-const tnText = paint(TOKYO_NIGHT.text);
-const tnBlue = paint(TOKYO_NIGHT.blue);
-const tnCyan = paint(TOKYO_NIGHT.cyan);
-const tnGreen = paint(TOKYO_NIGHT.green);
-const tnYellow = paint(TOKYO_NIGHT.yellow);
-const tnPurple = paint(TOKYO_NIGHT.purple);
-const tnComment = paint(TOKYO_NIGHT.comment);
-const tnBorder = paint(TOKYO_NIGHT.border);
-const tnOrange = paint(TOKYO_NIGHT.orange);
-const tnBoldBlue = (s: string) => `\x1b[1m${tnBlue(s)}\x1b[22m`;
-
-function buildTable(_theme: Theme, width: number, loaded: LoadedInfo): string[] {
+function buildTable(theme: Theme, width: number, loaded: LoadedInfo): string[] {
   const logoRows = getPiLogoRows();
   const logoWidth = Math.max(...logoRows.map((r) => r.length));
   const valueWidth = Math.max(width - logoWidth - 7, 8);
-  const border = tnBorder;
+  const border = (s: string) => theme.fg("borderMuted", s);
   // Left-aligned: the P stem runs down grid column 0 in every row, so any
   // left padding on the shorter rows would jog the stem and break the P.
-  const fitLogo = (s: string) => tnText(truncateToWidth(s, logoWidth).padEnd(logoWidth));
+  const fitLogo = (s: string) => theme.fg("text", truncateToWidth(s, logoWidth).padEnd(logoWidth));
+  const dim = (s: string) => theme.fg("dim", s);
   const entries: Array<{ text: string; color: (s: string) => string }> = [
-    { text: `Version: ${VERSION}`, color: tnBoldBlue },
+    { text: `Version: ${VERSION}`, color: (s) => theme.bold(theme.fg("accent", s)) },
+    { text: `Model: ${loaded.model}`, color: (s) => theme.fg("mdHeading", s) },
+    { text: `Cwd: ${loaded.cwdDir}`, color: (s) => theme.fg("syntaxFunction", s) },
     {
       text: `Context: ${loaded.agents}`,
-      color: (s) => (loaded.agents === "none" ? tnComment(s) : tnPurple(s)),
+      color: (s) => (loaded.agents === "none" ? dim(s) : theme.fg("customMessageLabel", s)),
     },
     {
       text: `MCP(s): ${loaded.mcps}`,
-      color: (s) => (loaded.mcps === "none" ? tnComment(s) : tnGreen(s)),
+      color: (s) => (loaded.mcps === "none" ? dim(s) : theme.fg("success", s)),
     },
-    { text: `Tool(s): ${loaded.tools}`, color: tnCyan },
-    { text: `Skill(s): ${loaded.skills}`, color: tnYellow },
+    {
+      text: `Tool(s): ${loaded.tools}`,
+      color: (s) => (loaded.tools === "none" ? dim(s) : theme.fg("mdCode", s)),
+    },
+    {
+      text: `Skill(s): ${loaded.skills}`,
+      color: (s) => (loaded.skills === "none" ? dim(s) : theme.fg("warning", s)),
+    },
     {
       text: `Extension(s): ${loaded.extensions}`,
-      color: (s) => (loaded.extensions === "none" ? tnComment(s) : tnOrange(s)),
+      color: (s) => (loaded.extensions === "none" ? dim(s) : theme.fg("syntaxString", s)),
     },
   ];
   const sep = (l: string, m: string, r: string) =>
     border(`${l}${"━".repeat(logoWidth + 2)}${m}${"━".repeat(valueWidth + 2)}${r}`);
-  let logoIndex = 0;
   const row = (logoCell: string, chunk: string, color: (s: string) => string) =>
     `${border("┃ ")}${fitLogo(logoCell)}${border(" ┃ ")}${color(chunk.padEnd(valueWidth))}${border(" ┃")}`;
   const divider = (logoCell: string) =>
@@ -225,7 +245,8 @@ function buildTable(_theme: Theme, width: number, loaded: LoadedInfo): string[] 
   type RowSpec = { chunk: string; color: (s: string) => string } | { divider: true };
   const rowSpecs: RowSpec[] = [];
   entries.forEach((entry, k) => {
-    // Word-wrap so long lists (tools, skills) are shown in full across rows.
+    // Lists are pre-truncated via formatNameList, so this wrap only kicks in
+    // on narrow terminals.
     for (const chunk of chunksPerEntry[k] ?? []) {
       rowSpecs.push({ chunk, color: entry.color });
     }
@@ -235,7 +256,7 @@ function buildTable(_theme: Theme, width: number, loaded: LoadedInfo): string[] 
   const logoStart = Math.floor(Math.max(0, totalRows - logoRows.length) / 2);
   const paddedLogo = Array.from({ length: totalRows }, (_, i) => logoRows[i - logoStart] ?? "");
   while (rowSpecs.length < totalRows) {
-    rowSpecs.push({ chunk: "", color: tnText });
+    rowSpecs.push({ chunk: "", color: (s) => s });
   }
 
   const lines = [sep("┏", "┳", "┓")];
@@ -253,36 +274,55 @@ export function buildHeaderLines(theme: Theme, width: number, loaded: LoadedInfo
 }
 
 export default function startupHeader(pi: ExtensionAPI) {
-  // ponytail: snapshot refreshed at turn start, not reactive per keystroke.
   let loaded: LoadedInfo = {
+    model: "no-model",
+    cwdDir: "none",
     mcps: "none",
-    tools: "",
-    skills: "",
+    tools: "none",
+    skills: "none",
     agents: "none",
     extensions: "none",
   };
+  let requestRender: (() => void) | undefined;
 
-  function snapshot(skills: Skill[], agentsPaths: string[], cwd: string): void {
+  function snapshot(
+    skills: Skill[],
+    agentsPaths: string[],
+    cwd: string,
+    modelLabel: string,
+  ): void {
     const entries = readMcpEntries();
-    const toolNames = pi
-      .getAllTools()
-      .map((t) => t.name)
-      .sort();
+    let toolNames: string[] = [];
+    try {
+      toolNames = (pi.getAllTools?.() ?? []).map((t) => t.name);
+    } catch {
+      toolNames = [];
+    }
     const skillNames = skills.map((s) => s.name);
     const extPaths = new Set<string>(scanExtensionPaths(cwd));
-    for (const c of pi.getCommands()) {
-      if (c.source === "extension") extPaths.add(c.sourceInfo.path);
+    try {
+      for (const t of pi.getAllTools?.() ?? []) {
+        const p = (t as { sourceInfo?: { path?: string } })?.sourceInfo?.path;
+        if (p && !p.startsWith("<builtin") && !p.startsWith("<sdk")) extPaths.add(p);
+      }
+    } catch {
+      // ignore tool source errors; disk scan already populated extPaths
     }
-    // for (const t of pi.getAllTools()) {
-    //   const p = t.sourceInfo.path;
-    //   if (!p.startsWith("<builtin") && !p.startsWith("<sdk")) extPaths.add(p);
-    // }
+    try {
+      for (const c of pi.getCommands?.() ?? []) {
+        if (c.source === "extension" && c.sourceInfo?.path) extPaths.add(c.sourceInfo.path);
+      }
+    } catch {
+      // ignore command source errors
+    }
     const extNames = Array.from(new Set([...extPaths].map(extensionDisplayName))).sort();
     loaded = {
-      mcps: entries.length > 0 ? entries.join(", ") : "none",
-      tools: `(${toolNames.length}) ${toolNames.join(", ")}`,
-      skills: `(${skillNames.length}) ${skillNames.sort().join(", ")}`,
-      extensions: extNames.length > 0 ? `(${extNames.length}) ${extNames.join(", ")}` : "none",
+      model: modelLabel || "no-model",
+      cwdDir: displayCwd(cwd),
+      mcps: entries.length > 0 ? formatNameList(entries) : "none",
+      tools: formatNameList(toolNames),
+      skills: formatNameList(skillNames),
+      extensions: formatNameList(extNames),
       agents:
         agentsPaths.length === 0 ? "none" : agentsPaths.map((p) => displayPath(p, cwd)).join(", "),
     };
@@ -290,23 +330,42 @@ export default function startupHeader(pi: ExtensionAPI) {
 
   pi.on("session_start", async (_event, ctx) => {
     if (ctx.mode !== "tui") return;
+    const modelLabel = ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : "no-model";
     snapshot(
       scanSkills(ctx.cwd),
       scanAgentsFiles(ctx.cwd).map((f) => f.path),
       ctx.cwd,
+      modelLabel,
     );
-    ctx.ui.setHeader((_tui, theme) => ({
-      render: (width: number) => buildHeaderLines(theme, width, loaded),
-      invalidate() {},
-    }));
+    ctx.ui.setHeader((tui, _theme) => {
+      requestRender = () => tui.requestRender();
+      return {
+        render: (width: number) => buildHeaderLines(_theme, width, loaded),
+        invalidate() {},
+      };
+    });
   });
 
   // MCP tools register asynchronously; refresh once the system prompt is built.
-  pi.on("before_agent_start", async (event) => {
+  pi.on("before_agent_start", async (event, ctx) => {
+    const cwd = event.systemPromptOptions?.cwd || ctx?.cwd || "";
+    const modelLabel = ctx?.model
+      ? `${ctx.model.provider}/${ctx.model.id}`
+      : loaded.model;
     snapshot(
       event.systemPromptOptions?.skills ?? [],
       (event.systemPromptOptions?.contextFiles ?? []).map((f) => f.path),
-      event.systemPromptOptions?.cwd ?? "",
+      cwd,
+      modelLabel,
     );
+    requestRender?.();
+  });
+
+  pi.on("model_select", async (event, _ctx) => {
+    loaded = {
+      ...loaded,
+      model: event.model ? `${event.model.provider}/${event.model.id}` : loaded.model,
+    };
+    requestRender?.();
   });
 }

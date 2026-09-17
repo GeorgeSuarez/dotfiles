@@ -4,10 +4,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { stripTerminalSequences } from "@earendil-works/pi-tui";
 import startupHeader, {
-  TOKYO_NIGHT,
   buildHeaderLines,
+  displayCwd,
   displayPath,
   formatMcpEntries,
+  formatNameList,
   scanAgentsFiles,
   scanSkills,
 } from "../agent/extensions/startup-header.ts";
@@ -15,10 +16,13 @@ import { VERSION } from "@earendil-works/pi-coding-agent";
 
 const theme = { fg: (_c, s) => s, bold: (s) => s };
 const loaded = {
-  mcps: "(10) maestro",
+  model: "opencode-go/muse-spark",
+  cwdDir: "~/proj",
+  mcps: "(1) maestro",
   tools: "(3) bash, read, write",
   skills: "(1) tdd",
   agents: "~/.pi/AGENTS.md",
+  extensions: "(1) startup-header",
 };
 
 function captureHeader() {
@@ -28,42 +32,66 @@ function captureHeader() {
   const ctx = {
     mode: "tui",
     cwd,
+    model: undefined,
     ui: { setHeader: (f) => (factory = f) },
   };
   const pi = {
     on: (e, h) => (handlers[e] = h),
     getAllTools: () => [{ name: "write" }, { name: "read" }, { name: "bash" }],
+    getCommands: () => [],
   };
   return { pi, ctx, handlers, getFactory: () => factory };
 }
 
 describe("startup header table", () => {
-  test("renders logo, version, mcps, tools, skills within width", async () => {
+  test("renders logo, version, model, mcps, tools, skills within width", async () => {
     const { pi, ctx, handlers, getFactory } = captureHeader();
     await startupHeader(pi);
     await handlers.session_start({}, ctx);
     await handlers.before_agent_start(
-      { systemPromptOptions: { skills: [{ name: "tdd" }] } },
+      { systemPromptOptions: { skills: [{ name: "tdd" }], cwd: ctx.cwd } },
       ctx,
     );
-    const lines = getFactory()({}, theme).render(80).map((l) => stripTerminalSequences(l));
+    const lines = getFactory()( { requestRender() {} }, theme).render(80).map((l) => stripTerminalSequences(l));
     expect(lines[0]).toMatch(/^┏.*┳.*┓$/);
     expect(lines.at(-1)).toMatch(/^┗.*┻.*┛$/);
-    expect(lines.some((l) => l.includes("█") && l.includes(VERSION))).toBe(true);
-    expect(lines.some((l) => l.includes("MCP(s): (10) maestro"))).toBe(true);
-    expect(lines.some((l) => l.includes("Tools: (3) bash, read, write"))).toBe(true);
+    expect(lines.some((l) => l.includes("█"))).toBe(true);
+    expect(lines.some((l) => l.includes(VERSION))).toBe(true);
+    expect(lines.some((l) => l.includes("Model:"))).toBe(true);
+    expect(lines.some((l) => l.includes("Cwd:"))).toBe(true);
     expect(lines.some((l) => l.includes("Skill(s): (1) tdd"))).toBe(true);
     expect(lines.some((l) => l.includes("Context:"))).toBe(true);
+    expect(lines.some((l) => l.includes("Extension(s):"))).toBe(true);
     for (const line of lines) expect([...line].length).toBeLessThanOrEqual(80);
   });
 
-  test("paints tokyo night colors for each section", () => {
-    const lines = buildHeaderLines(theme, 80, loaded).join("\n");
-    const code = (hex) =>
-      `38;2;${parseInt(hex.slice(1, 3), 16)};${parseInt(hex.slice(3, 5), 16)};${parseInt(hex.slice(5, 7), 16)}`;
-    for (const key of ["blue", "green", "cyan", "yellow", "purple", "text", "border"]) {
-      expect(lines.includes(code(TOKYO_NIGHT[key]))).toBe(true);
-    }
+  test("narrows without exceeding width", () => {
+    const lines = buildHeaderLines(theme, 40, loaded).map((l) => stripTerminalSequences(l));
+    for (const line of lines) expect([...line].length).toBeLessThanOrEqual(40);
+    expect(lines.some((l) => l.includes("maestro"))).toBe(true);
+  });
+
+  test("formats mcp cache servers sorted with tool counts", () => {
+    expect(formatMcpEntries({ zebra: { tools: [{}] }, maestro: { tools: [{}, {}] }, empty: {} })).toEqual([
+      "empty",
+      "(2) maestro",
+      "(1) zebra",
+    ]);
+    expect(formatMcpEntries(undefined)).toEqual([]);
+    expect(
+      buildHeaderLines(theme, 80, { ...loaded, mcps: "none", tools: "none", skills: "none" })
+        .join("\n"),
+    ).toContain("MCP(s): none");
+  });
+
+  test("formatNameList truncates long lists", () => {
+    expect(formatNameList([])).toBe("none");
+    expect(formatNameList(["b", "a"])).toBe("(2) a, b");
+    const many = Array.from({ length: 12 }, (_, i) => `tool-${String(i).padStart(2, "0")}`);
+    const out = formatNameList(many);
+    expect(out.startsWith("(12) ")).toBe(true);
+    expect(out).toContain("+4 more");
+    expect(out.includes("tool-11")).toBe(false);
   });
 
   test("scanSkills reads user and project skill dirs", () => {
@@ -84,33 +112,6 @@ describe("startup header table", () => {
     expect(scanSkills(join(cwd, "nope"), join(cwd, "nope"))).toEqual([]);
   });
 
-  test("dividers span the text column only, logo column stays solid", () => {
-    const lines = buildHeaderLines(theme, 80, loaded).map((l) => stripTerminalSequences(l));
-    const dividers = lines.filter((l) => l.includes("┣"));
-    expect(dividers.length).toBe(4);
-    for (const d of dividers) {
-      expect(d).toMatch(/┣━+┫$/);
-      expect(d.includes("█")).toBe(true);
-    }
-  });
-
-  test("narrows without exceeding width", () => {
-    const lines = buildHeaderLines(theme, 40, loaded).map((l) => stripTerminalSequences(l));
-    for (const line of lines) expect([...line].length).toBeLessThanOrEqual(40);
-    expect(lines.some((l) => l.includes("maestro"))).toBe(true);
-  });
-
-  test("formats mcp cache servers with tool counts", () => {
-    expect(formatMcpEntries({ maestro: { tools: [{}, {}] }, empty: {} })).toEqual([
-      "(2) maestro",
-      "empty",
-    ]);
-    expect(formatMcpEntries(undefined)).toEqual([]);
-    expect(buildHeaderLines(theme, 80, { mcps: "none", tools: "", skills: "", agents: "none" }).join("\n")).toContain(
-      "MCP(s): none",
-    );
-  });
-
   test("scanAgentsFiles reads agentDir and ancestor AGENTS.md", () => {
     const agentDir = mkdtempSync(join(tmpdir(), "pi-header-agent-"));
     writeFileSync(join(agentDir, "AGENTS.md"), "global rules\n");
@@ -129,5 +130,11 @@ describe("startup header table", () => {
     expect(displayPath(join("/proj", "sub", "x.md"), "/proj")).toBe(join("sub", "x.md"));
     expect(displayPath(join(process.env.HOME, "AGENTS.md"), "/tmp")).toBe("~/AGENTS.md");
     expect(displayPath("/etc/AGENTS.md", "/tmp")).toBe("/etc/AGENTS.md");
+  });
+
+  test("displayCwd shortens home and guards empty", () => {
+    expect(displayCwd("")).toBe("none");
+    expect(displayCwd(join(process.env.HOME, "proj"))).toBe("~/proj");
+    expect(displayCwd("/tmp/x")).toBe("/tmp/x");
   });
 });

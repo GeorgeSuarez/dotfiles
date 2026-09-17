@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { Check } from "typebox/value";
-import websearch, { parseSearchResponse, selectProvider } from "../agent/extensions/web.ts";
+import websearch, { parseSearchResponse, selectProvider } from "../agent/extensions/web-tools.ts";
 
 const originalFetch = globalThis.fetch;
 const originalProvider = process.env.OPENCODE_WEBSEARCH_PROVIDER;
