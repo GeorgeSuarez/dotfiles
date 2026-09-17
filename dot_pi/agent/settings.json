@@ -4,7 +4,10 @@
   "defaultProvider": "opencode-go",
   "defaultModel": "muse-spark-1.3-contributor",
   "defaultThinkingLevel": "max",
-  "enabledModels": ["opencode-go/omen-alpha", "opencode-go/muse-spark-1.3-contributor"],
+  "enabledModels": [
+    "opencode-go/omen-alpha",
+    "opencode-go/muse-spark-1.3-contributor"
+  ],
   "thinkingBudgets": {
     "minimal": 1024,
     "low": 4096,
@@ -21,7 +24,6 @@
   "packages": [
     "npm:@nicknisi/pi-cloak",
     "npm:@plannotator/pi-extension",
-    "git:github.com/DietrichGebert/ponytail",
     "npm:@ff-labs/pi-fff",
     "npm:pi-mcp-adapter",
     "npm:@narumitw/pi-usage"

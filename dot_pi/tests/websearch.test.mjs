@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { Check } from "typebox/value";
-import websearch, { parseSearchResponse, selectProvider } from "../agent/extensions/websearch.ts";
+import websearch, { parseSearchResponse, selectProvider } from "../agent/extensions/web.ts";
 
 const originalFetch = globalThis.fetch;
 const originalProvider = process.env.OPENCODE_WEBSEARCH_PROVIDER;
@@ -41,7 +41,7 @@ describe("websearch tool", () => {
 	test("registers the OpenCode-compatible schema and sends Exa defaults", async () => {
 		const tools = [];
 		websearch({ registerTool: (tool) => tools.push(tool) });
-		expect(tools).toHaveLength(1);
+		expect(tools).toHaveLength(2);
 		expect(tools[0].name).toBe("websearch");
 		expect(Check(tools[0].parameters, { query: "pi" })).toBe(true);
 		expect(Check(tools[0].parameters, { query: "pi", numResults: 21 })).toBe(false);

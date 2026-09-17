@@ -1,0 +1,8 @@
+# Chezmoi config — ~/.config/chezmoi/chezmoi.toml
+# Source state lives at ~/.local/share/chezmoi, dest is $HOME.
+# Keep templates minimal: 95% plain files, .tmpl only where a machine
+# value (email, font size) must diverge. See `chezmoi doctemplate`.
+
+[data]
+  name = "George Suarez"
+  email = "georgesuarezdev@gmail.com"

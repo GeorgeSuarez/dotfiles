@@ -17,7 +17,6 @@ return {
                 yaml = { "oxfmt" },
                 markdown = { "oxfmt" },
                 graphql = { "oxfmt" },
-                liquid = { "prettier" },
                 lua = { "stylua" },
                 python = { "isort", "black" },
                 c = { "clang-format" },

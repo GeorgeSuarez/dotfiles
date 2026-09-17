@@ -1,5 +1,18 @@
+# Repo-only files — never applied to $HOME
+README.md
+AGENTS.md
 Brewfile
 install.sh
+mise-*.md
+
+# Build / VCS noise — never applied
 **/node_modules/**
 **/.git/**
 *.log
+**/.DS_Store
+
+# Runtime state — lives in $HOME only, never synced back to source
+**/sessions/**
+**/mcp-cache.json
+**/mcp-onboarding.json
+*.bak

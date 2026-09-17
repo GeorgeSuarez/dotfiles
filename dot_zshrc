@@ -1,6 +1,11 @@
 # Path to your Oh My Zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
 
+# Must be set BEFORE sourcing oh-my-zsh.
+DISABLE_AUTO_TITLE="true"
+
+# Dedupe PATH (keeps Docker/Maestro appends from duplicating on reload).
+typeset -U path PATH
 
 # Which plugins would you like to load?
 # Standard plugins can be found in $ZSH/plugins/
@@ -18,8 +23,6 @@ export PATH="/usr/local/opt/python/libexec/bin:$PATH"
 
 export EDITOR="nvim"
 
-DISABLE_AUTO_TITLE="true"
-
 alias reload-zsh="source ~/.zshrc"
 alias ezsh="nvim ~/.zshrc"
 alias envim="nvim ~/.config/nvim/"
@@ -33,16 +36,20 @@ alias oc2="opencode2"
 # Machine-local aliases (not synced): projects, custom tools
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
 
-# Dotfile workflow: sync live configs into chezmoi, review diff, apply
-alias sync-dotfiles='chezmoi re-add && chezmoi diff && chezmoi apply'
-alias push-dotfiles='chezmoi cd && git add -A && git diff --cached && git commit && git push'
+# Dotfile workflow (review-first — never blind re-add):
+#   1. `chezmoi diff` / `chezmoi status` to review live vs source
+#   2. `chezmoi re-add <file>` only the files you intend to keep
+#   3. `chezmoi apply` to push source -> live
+#   4. `push-dotfiles` to commit + push (never `git add -A`; secrets are gitignored but stay cautious)
+alias dotdiff='chezmoi status && chezmoi diff'
+alias sync-dotfiles='chezmoi diff && chezmoi apply'
+alias push-dotfiles='chezmoi cd && git status --short && git add -u && git diff --cached && git commit && git push'
 
 source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 eval "$(starship init zsh)"
 
-eval $(thefuck --alias)
 PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
 
 # bun completions
@@ -56,7 +63,8 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 if output="$(mole completion zsh 2>/dev/null)"; then eval "$output"; fi
 
 [[ -f "$HOME/.local/bin/env" ]] && . "$HOME/.local/bin/env"
-export PATH=$PATH:$HOME/.maestro/bin
-export PATH=$PATH:$HOME/.maestro/bin
+
+# Maestro (guarded so reloads don't duplicate PATH — typeset -U above also helps).
+[[ -d "$HOME/.maestro/bin" ]] && [[ ":$PATH:" != *":$HOME/.maestro/bin:"* ]] && export PATH="$PATH:$HOME/.maestro/bin"
 
 export ANDROID_HOME=$HOME/Library/Android/sdk && export PATH=$PATH:$ANDROID_HOME/emulator && export PATH=$PATH:$ANDROID_HOME/platform-tools

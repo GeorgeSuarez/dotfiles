@@ -178,12 +178,6 @@ return {
         config = function()
             vim.g.skip_ts_context_commentstring_module = true
         end,
-        opts = {
-            options = {
-                c = { __default = "// %s", __multiline = "/* %s */" },
-                cpp = { __default = "// %s", __multiline = "/* %s */" },
-            },
-        },
     },
 
     {

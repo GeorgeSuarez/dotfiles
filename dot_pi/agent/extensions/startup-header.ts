@@ -1,8 +1,9 @@
-import { readFileSync } from "node:fs";
+import { Dirent, existsSync, readdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, relative } from "node:path";
 import type { ExtensionAPI, Skill, Theme } from "@earendil-works/pi-coding-agent";
 import {
+  CONFIG_DIR_NAME,
   VERSION,
   getAgentDir,
   loadProjectContextFiles,
@@ -88,6 +89,54 @@ export function scanAgentsFiles(
   }
 }
 
+function isExtensionDir(dir: string): boolean {
+  if (existsSync(join(dir, "index.ts")) || existsSync(join(dir, "index.js"))) return true;
+  try {
+    const pkg = JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as {
+      pi?: { extensions?: unknown };
+    };
+    return Array.isArray(pkg?.pi?.extensions) && pkg.pi.extensions.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+function scanExtensionPaths(cwd: string, agentDir = getAgentDir()): string[] {
+  const found: string[] = [];
+  for (const dir of [join(agentDir, "extensions"), join(cwd, CONFIG_DIR_NAME, "extensions")]) {
+    let entries: Dirent[];
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+
+    for (const entry of entries) {
+      const full = join(dir, entry.name);
+      if (
+        (entry.isFile() || entry.isSymbolicLink()) &&
+        (entry.name.endsWith(".ts") || entry.name.endsWith(".js"))
+      ) {
+        found.push(full);
+      } else if ((entry.isDirectory() || entry.isSymbolicLink()) && isExtensionDir(full)) {
+        found.push(full);
+      }
+    }
+  }
+}
+
+function extensionDisplayName(extPath: string): string {
+  const parts = extPath.replace(/\\/g, "/").split("/");
+  const nm = parts.lastIndexOf("node_modules");
+  const after = nm >= 0 ? parts[nm + 1] : undefined;
+  if (after) {
+    return after.startsWith("@") ? parts.slice(nm + 1, nm + 3).join("/") : after;
+  }
+  const base = parts[parts.length - 1] ?? extPath;
+  if (/^index\.[tj]s$/.test(base)) return parts[parts.length - 2] ?? base;
+  return base.replace(/\.[tj]s$/, "");
+}
+
 /** Shorten a context path: relative when under cwd, ~/ when under home. */
 export function displayPath(path: string, cwd: string): string {
   const rel = relative(cwd, path);
@@ -101,6 +150,7 @@ interface LoadedInfo {
   tools: string;
   skills: string;
   agents: string;
+  extensions: string;
 }
 
 /**
@@ -116,6 +166,7 @@ export const TOKYO_NIGHT = {
   purple: "#bb9af7",
   comment: "#565f89",
   border: "#3b4261",
+  orange: "#ff9e64",
 } as const;
 
 function paint(hex: string): (s: string) => string {
@@ -133,6 +184,7 @@ const tnYellow = paint(TOKYO_NIGHT.yellow);
 const tnPurple = paint(TOKYO_NIGHT.purple);
 const tnComment = paint(TOKYO_NIGHT.comment);
 const tnBorder = paint(TOKYO_NIGHT.border);
+const tnOrange = paint(TOKYO_NIGHT.orange);
 const tnBoldBlue = (s: string) => `\x1b[1m${tnBlue(s)}\x1b[22m`;
 
 function buildTable(_theme: Theme, width: number, loaded: LoadedInfo): string[] {
@@ -155,43 +207,60 @@ function buildTable(_theme: Theme, width: number, loaded: LoadedInfo): string[] 
     },
     { text: `Tool(s): ${loaded.tools}`, color: tnCyan },
     { text: `Skill(s): ${loaded.skills}`, color: tnYellow },
+    {
+      text: `Extension(s): ${loaded.extensions}`,
+      color: (s) => (loaded.extensions === "none" ? tnComment(s) : tnOrange(s)),
+    },
   ];
   const sep = (l: string, m: string, r: string) =>
     border(`${l}${"━".repeat(logoWidth + 2)}${m}${"━".repeat(valueWidth + 2)}${r}`);
   let logoIndex = 0;
-  const nextLogoCell = () => (logoIndex < logoRows.length ? logoRows[logoIndex++] : "");
   const row = (logoCell: string, chunk: string, color: (s: string) => string) =>
     `${border("┃ ")}${fitLogo(logoCell)}${border(" ┃ ")}${color(chunk.padEnd(valueWidth))}${border(" ┃")}`;
-  const divider = () =>
-    `${border("┃ ")}${fitLogo(nextLogoCell())}${border(" ┣")}${border("━".repeat(valueWidth + 2))}${border("┫")}`;
+  const divider = (logoCell: string) =>
+    `${border("┃ ")}${fitLogo(logoCell)}${border(" ┣")}${border("━".repeat(valueWidth + 2))}${border("┫")}`;
 
-  const lines = [sep("┏", "┳", "┓")];
+  // Center the Pi logo block with the table height
+  const chunksPerEntry = entries.map((entry) => wrapTextWithAnsi(entry.text, valueWidth));
+  type RowSpec = { chunk: string; color: (s: string) => string } | { divider: true };
+  const rowSpecs: RowSpec[] = [];
   entries.forEach((entry, k) => {
     // Word-wrap so long lists (tools, skills) are shown in full across rows.
-    for (const chunk of wrapTextWithAnsi(entry.text, valueWidth)) {
-      lines.push(row(nextLogoCell(), chunk, entry.color));
+    for (const chunk of chunksPerEntry[k] ?? []) {
+      rowSpecs.push({ chunk, color: entry.color });
     }
-    if (k < entries.length - 1) lines.push(divider());
+    if (k < entries.length - 1) rowSpecs.push({ divider: true });
   });
-  while (logoIndex < logoRows.length) {
-    lines.push(row(nextLogoCell(), "", tnText));
+  const totalRows = Math.max(rowSpecs.length, logoRows.length);
+  const logoStart = Math.floor(Math.max(0, totalRows - logoRows.length) / 2);
+  const paddedLogo = Array.from({ length: totalRows }, (_, i) => logoRows[i - logoStart] ?? "");
+  while (rowSpecs.length < totalRows) {
+    rowSpecs.push({ chunk: "", color: tnText });
   }
+
+  const lines = [sep("┏", "┳", "┓")];
+  rowSpecs.forEach((spec, i) => {
+    const logoCell = paddedLogo[i] ?? "";
+    if ("divider" in spec) lines.push(divider(logoCell));
+    else lines.push(row(logoCell, spec.chunk, spec.color));
+  });
   lines.push(sep("┗", "┻", "┛"));
   return lines.map((line) => truncateToWidth(line, width));
 }
 
 export function buildHeaderLines(theme: Theme, width: number, loaded: LoadedInfo): string[] {
-  const lines = buildTable(theme, width, loaded);
-  // Safety net: themed lines must never exceed the TUI width.
-  for (const line of lines) {
-    if (visibleWidth(line) > width) return lines.map((l) => truncateToWidth(l, width));
-  }
-  return lines;
+  return buildTable(theme, width, loaded);
 }
 
 export default function startupHeader(pi: ExtensionAPI) {
   // ponytail: snapshot refreshed at turn start, not reactive per keystroke.
-  let loaded: LoadedInfo = { mcps: "none", tools: "", skills: "", agents: "none" };
+  let loaded: LoadedInfo = {
+    mcps: "none",
+    tools: "",
+    skills: "",
+    agents: "none",
+    extensions: "none",
+  };
 
   function snapshot(skills: Skill[], agentsPaths: string[], cwd: string): void {
     const entries = readMcpEntries();
@@ -200,10 +269,20 @@ export default function startupHeader(pi: ExtensionAPI) {
       .map((t) => t.name)
       .sort();
     const skillNames = skills.map((s) => s.name);
+    const extPaths = new Set<string>(scanExtensionPaths(cwd));
+    for (const c of pi.getCommands()) {
+      if (c.source === "extension") extPaths.add(c.sourceInfo.path);
+    }
+    // for (const t of pi.getAllTools()) {
+    //   const p = t.sourceInfo.path;
+    //   if (!p.startsWith("<builtin") && !p.startsWith("<sdk")) extPaths.add(p);
+    // }
+    const extNames = Array.from(new Set([...extPaths].map(extensionDisplayName))).sort();
     loaded = {
       mcps: entries.length > 0 ? entries.join(", ") : "none",
       tools: `(${toolNames.length}) ${toolNames.join(", ")}`,
       skills: `(${skillNames.length}) ${skillNames.sort().join(", ")}`,
+      extensions: extNames.length > 0 ? `(${extNames.length}) ${extNames.join(", ")}` : "none",
       agents:
         agentsPaths.length === 0 ? "none" : agentsPaths.map((p) => displayPath(p, cwd)).join(", "),
     };

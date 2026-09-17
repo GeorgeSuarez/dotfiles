@@ -6,8 +6,7 @@ These extensions are auto-discovered from `~/.pi/agent/extensions/`.
 
 | Extension | Capability |
 | --- | --- |
-| `websearch.ts` | OpenCode-compatible Exa/Parallel web search |
-| `webfetch.ts` | Bounded URL fetching and HTML-to-text extraction |
+| `web.ts` | Web search (Exa/Parallel) + bounded URL fetching in one extension |
 | `browser.ts` | `agent-browser` navigation and interaction |
 | `pi-workflow.ts` | Project Git/checkpoint/handoff/status workflow (`/project`, `/checkpoint`, `/restore`, `/handoff`, `/stats`) |
 | `protected-paths.ts` | Blocks protected-path writes and confirms destructive commands |

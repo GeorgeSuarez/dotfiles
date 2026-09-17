@@ -4,20 +4,24 @@ macOS dotfiles managed with [chezmoi](https://chezmoi.io). Tooling comes from th
 
 ## Chezmoi naming (files here are NOT named like the files they manage)
 
-- `dot_*` → `~/.` (e.g. `dot_zshrc` → `~/.zshrc`); a `dot_config/` dir → `~/.config/` (nvim, opencode, herdr)
-- No `.tmpl` templates are used; never add one without introducing template data too
-- `dot_pi/` is not a Raspberry Pi's config, but a config for the Pi agent harness
+- `dot_*` → `~/.` (e.g. `dot_zshrc` → `~/.zshrc`); a `dot_config/` dir → `~/.config/` (nvim, opencode, herdr, ghostty, chezmoi)
+- `private_*` → same name with `0600` (e.g. `dot_pi/agent/private_auth.json` → `~/.pi/agent/auth.json`)
+- `executable_*` → same name with `+x` (e.g. `dot_agents/.../executable_install.mjs` → `~/.agents/.../install.mjs`)
+- `~/.agents/` is global agent skills; `~/.pi/agent/` is pi-specific (extensions, settings, prompts). Do not confuse them. `~/.pi/agent/skills/` are symlinks into `~/.agents/skills/` — derived, never `chezmoi add` them.
+- Config lives at `~/.config/chezmoi/chezmoi.toml` (also tracked as `dot_config/chezmoi/chezmoi.toml`). Templates (`.tmpl`) are allowed only with matching `[data]` in that file — keep 95% of files plain.
 
 ## Sync workflow — the repo and live config both change
 
-- `~/.zshrc` defines the two aliases: `sync-dotfiles` (`chezmoi re-add && chezmoi diff && chezmoi apply`) and `push-dotfiles` (`chezmoi cd`, git add/stage/`git commit` — opens `$EDITOR` — `git push`)
-- Two directions: editing a repo file must be followed by `chezmoi apply` to reach the live config; editing a live config (e.g. `nvim` settings) is pulled back with `chezmoi re-add`
+- `~/.zshrc` defines: `dotdiff` (`chezmoi status` + `chezmoi diff`), `sync-dotfiles` (review `diff`, then `apply`), `push-dotfiles` (`git status`, `git add -u`, review `git diff --cached`, `git commit`, `git push`)
+- Review-first, never blind `chezmoi re-add`: run `chezmoi diff`, then `chezmoi re-add <file>` only for files you intend to keep, then `chezmoi apply`
+- Two directions: editing a repo file must be followed by `chezmoi apply` to reach the live config; editing a live config (e.g. `nvim` settings) is pulled back with `chezmoi re-add <file>`
 - `~/.zshrc.local` is machine-local, never synced (sourced from `~/.zshrc`); keep it out of the repo
 - Commits use conventional style: `feat(pi):`, `chore(nvim):`, `chore(ghostty):`
 
 ## Gotchas
 
-- `dot_pi/agent/private_auth.json` and `private_models-store.json` are secrets — untracked and not in `.gitignore`, so `push-dotfiles` would stage them; never `git add` or commit them
-- `README.md`, `Brewfile`, `install.sh`, `node_modules/`, `*.log` are ignored by `.chezmoiignore` (repo-only, never applied to home); add new dependencies to `Brewfile`, not install.sh
-- `dot_config/opencode/` is the live opencode config (plugins, `opencode.jsonc`); edits need `chezmoi apply` plus a restart to take effect
+- Secrets (`dot_pi/agent/private_auth.json` → `~/.pi/agent/auth.json`, `private_models-store.json` → `models-store.json`) are gitignored but applied by chezmoi. Never `git add -f` them; `push-dotfiles` uses `git add -u` (tracked-only) for this reason.
+- `README.md`, `AGENTS.md`, `Brewfile`, `install.sh`, `mise-*.md`, `node_modules/`, `*.log`, `**/sessions/**`, `mcp-cache.json` are in `.chezmoiignore` (repo-only or live-only state, never applied to home); add new dependencies to `Brewfile`, not install.sh
+- Never `chezmoi add`: `~/.pi/agent/sessions/**`, `mcp-cache.json`, `*.bak`, `~/.pi/agent/skills/**` (symlinks), `~/.config/opencode/{service.json,cli.json,tui.jsonc,herdr-tui-session.js}` (one holds a password), `~/.config/herdr/{*.log,plugins/,session.json}`
+- `dot_config/opencode/` is the live opencode config (plugins, `opencode.jsonc`); edits need `chezmoi apply` plus a restart to take effect. `herdr-agent-state.js` is managed by herdr (overwritten on reinstall) — `re-add` it, don't hand-edit.
 - Neovim changes: read `dot_config/nvim/AGENTS.md` first — the config follows its own conventions (stylua, lazy.nvim)

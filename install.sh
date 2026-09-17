@@ -31,7 +31,20 @@ fi
 "$HOME/.tmux/plugins/tpm/bin/install_plugins" || true
 
 # 5. Apply dotfiles
+# Works both ways:
+#   - fresh machine: `chezmoi init --apply <url>` clones to ~/.local/share/chezmoi
+#   - already cloned (e.g. `git clone dotfiles && cd dotfiles && ./install.sh`):
+#     just apply the local source instead of cloning a second copy.
 echo "==> Applying dotfiles via chezmoi"
-chezmoi init --apply "$REPO_URL"
+if [[ "$SCRIPT_DIR" == "$HOME/.local/share/chezmoi" ]]; then
+  chezmoi apply
+elif [[ -d "$HOME/.local/share/chezmoi/.git" ]]; then
+  echo "    (chezmoi source already exists, applying in place)"
+  chezmoi apply
+else
+  chezmoi init --apply "$REPO_URL"
+fi
+
+chezmoi doctor || true
 
 echo "Done. Open a new shell to load your config."

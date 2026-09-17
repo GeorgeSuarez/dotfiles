@@ -17,6 +17,8 @@ prefix = "ctrl+a"
 # Prefix-mode actions
 split_vertical = "prefix+backslash"
 split_horizontal = "prefix+enter"
+previous_workspace = "prefix+("
+next_workspace = "prefix+)"
 
 # Plannator keybinds
 # Terminal annotations
@@ -52,10 +54,11 @@ command = "annotate.last"
 description = "review the agent's last reply"
 
 [ui]
-confirm_close = false
+confirm_close = true
 show_agent_labels_on_pane_borders = true
-status_indicators = "dots"
+status_indicators = "symbols"
 agent_panel_sort = "priority"
+prompt_new_workspace_name = true
 
 [ui.toast]
 # off = disable pop-up notifications
@@ -64,7 +67,7 @@ agent_panel_sort = "priority"
 # system = ask the OS notification service directly
 # delivery = "off"
 # delay_seconds = 1
-delivery = "terminal"
+delivery = "herdr"
 
 [ui.toast.herdr]
 position = "top-right"
@@ -76,5 +79,3 @@ position = "top-right"
 [experimental]
 kitty_graphics = true
 pane_history = false
-
-

@@ -16,6 +16,7 @@ return {
         -- enable mason and configure icons
         mason.setup({
             ui = {
+                border = "rounded",
                 icons = {
                     package_installed = "✓",
                     package_pending = "➜",
@@ -25,14 +26,20 @@ return {
         })
 
         mason_lspconfig.setup({
+            -- vtsls excluded: tsc (TS7 native) is the chosen TS server.
+            -- two TS servers on one buffer crash inlay hints (neovim#36318).
+            automatic_enable = {
+                exclude = { "vtsls" },
+            },
             -- list of servers for mason to install
             ensure_installed = {
-                "vtsls",
                 "html",
                 "cssls",
                 "tailwindcss",
                 "lua_ls",
                 "pyright",
+                "jsonls",
+                "yamlls",
             },
             -- servers are automatically enabled via vim.lsp.enable (mason-lspconfig
             -- default). custom server configs (lua_ls, vtsls, roslyn) live in
@@ -40,20 +47,21 @@ return {
         })
 
         mason_tool_installer.setup({
+            auto_update = true,
+            run_on_start = true,
+            start_delay = 3000,
+            debounce_hours = 12,
             ensure_installed = {
                 -- lsp servers
                 "roslyn-language-server",
                 -- formatters
                 "oxfmt",
                 "stylua",
-                "isort",
-                "black",
                 "clang-format",
                 "csharpier",
                 -- linters
                 "ruff",
                 "oxlint",
-                "eslint_d",
                 "swiftlint",
             },
         })
