@@ -1,11 +1,4 @@
-# Repo-only files — never applied to $HOME
-README.md
-AGENTS.md
-Brewfile
-install.sh
-mise-*.md
-
-# Build / VCS noise — never applied
+# Build / VCS noise — never applied to $HOME
 **/node_modules/**
 **/.git/**
 *.log

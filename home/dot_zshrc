@@ -37,13 +37,15 @@ alias oc2="opencode2"
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
 
 # Dotfile workflow (review-first — never blind re-add):
+#   Repo root is the parent of `chezmoi source-path` (source lives in <repo>/home/).
 #   1. `chezmoi diff` / `chezmoi status` to review live vs source
 #   2. `chezmoi re-add <file>` only the files you intend to keep
 #   3. `chezmoi apply` to push source -> live
 #   4. `push-dotfiles` to commit + push (never `git add -A`; secrets are gitignored but stay cautious)
+dotrepo() { cd "$(dirname "$(chezmoi source-path)")"; }
 alias dotdiff='chezmoi status && chezmoi diff'
 alias sync-dotfiles='chezmoi diff && chezmoi apply'
-alias push-dotfiles='chezmoi cd && git status --short && git add -u && git diff --cached && git commit && git push'
+push-dotfiles() { dotrepo && git status --short && git add -u && git diff --cached && git commit && git push; }
 
 source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
