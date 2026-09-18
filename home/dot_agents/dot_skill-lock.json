@@ -15,9 +15,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/herdrdev/herdr.git",
       "skillPath": "skills/herdr/SKILL.md",
-      "skillFolderHash": "b9dcfddcfa7ce43e2e4cf60e724c519be553f149",
+      "skillFolderHash": "6985a5e8418d43171c45c2a9e04b02de7308e1d8",
       "installedAt": "2026-07-30T02:38:50.158Z",
-      "updatedAt": "2026-09-08T23:36:40.636Z"
+      "updatedAt": "2026-09-17T23:41:18.854Z"
     },
     "grill-me": {
       "source": "mattpocock/skills",
@@ -105,9 +105,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/dmmulroy/anti-slop.git",
       "skillPath": "skills/install-anti-slop/SKILL.md",
-      "skillFolderHash": "aaf5942ffe5b7be7fdec40d613d74b784dee6b39",
+      "skillFolderHash": "89044d21c75a367eac1ddbaf208e650b1a7d5820",
       "installedAt": "2026-08-13T12:15:40.073Z",
-      "updatedAt": "2026-09-08T23:36:41.881Z"
+      "updatedAt": "2026-09-17T23:41:20.622Z"
     },
     "writing-for-agents": {
       "source": "mattpocock/skills",
@@ -134,9 +134,9 @@
       "sourceUrl": "https://github.com/trycua/cua.git",
       "ref": "main",
       "skillPath": "libs/cua-driver/rust/Skills/cua-driver/SKILL.md",
-      "skillFolderHash": "456e1ca1c8ac4a11ff2aacdb96c569394c462166",
+      "skillFolderHash": "7acccecc42414292657fe7a274eecbf2cb512e8c",
       "installedAt": "2026-09-10T02:29:16.149Z",
-      "updatedAt": "2026-09-10T02:29:16.149Z"
+      "updatedAt": "2026-09-17T23:41:27.996Z"
     }
   },
   "dismissed": {
