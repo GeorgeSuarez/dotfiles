@@ -26,7 +26,8 @@
     "npm:@plannotator/pi-extension",
     "npm:@ff-labs/pi-fff",
     "npm:pi-mcp-adapter",
-    "npm:@narumitw/pi-usage"
+    "npm:@narumitw/pi-usage",
+    "npm:@narumitw/pi-btw"
   ],
   "extensions": [],
   "enableInstallTelemetry": false,

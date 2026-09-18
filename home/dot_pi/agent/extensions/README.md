@@ -63,6 +63,7 @@ PI_PROVIDER_FALLBACKS=ollama/qwen2.5-coder,opencode-go/gpt-5.6-luna
 PI_ACTION_NOTIFICATIONS=off
 PI_ACTION_NOTIFICATIONS_CHANNEL=terminal # terminal, ui, both, hark, or all
 PI_HARK_VERBOSITY=actions             # optional: errors (actions + failures), all (also starts + finishes)
+PI_HARK_DONE_SUMMARY=off              # optional: disable the done-with-summary Hark push (on by default)
 PI_ACTION_REPLY=off                    # optional: disable answering from the iPhone notification
 PI_ACTION_REPLY_TIMEOUT=600            # optional: seconds to wait for an iPhone answer (30-86400)
 PI_HARK_LIVE_ACTIVITY=on               # optional: Lock Screen run-tracker card (off by default)
@@ -97,12 +98,16 @@ PI_HARK_TAP_URL=...                      # optional public/deep-link tap destina
 /providers            Show local provider configuration
 /fallback             Switch to the next configured fallback model
 /status-line          Toggle the enhanced context and cost footer
-/action-notifications [on|off|status|test|channel <name|reset>|reply <on|off>|verbosity <level|reset>]
-                       Toggle, inspect, test, switch the channel, toggle iPhone answers, or set Hark verbosity
+/action-notifications [on|off|status|test|channel <name|reset>|reply <on|off>|verbosity <level|reset>|done <on|off>]
+                       Toggle, inspect, test, switch the channel, toggle iPhone answers, set Hark verbosity, or toggle done summaries
 ```
 
 When Hark is configured, the LLM can call `ask_user_on_iphone` for an interactive Hark Pro approval, yes/no, or text response. The tool waits for the iPhone response and returns it to the agent. The webhook URL is a credential and must not be committed or exposed in logs, prompts, session data, or tool results.
 
+With channel `hark` or `all`, a finished run also sends one done push with a short summary of what was done (last two sentences, code stripped). Disable with `PI_HARK_DONE_SUMMARY=off` or `/action-notifications done off`.
+
 With channel `hark` or `all`, settled questions and approvals also go out as interactive Hark prompts automatically: the user's answer is injected back into the session as a user message and the agent continues. Statements stay one-way, timeouts stay silent (no loop fuel), and at most 3 answers in a row are collected before falling back to one-way until the user writes again. Disable with `PI_ACTION_REPLY=off` or `/action-notifications reply off`.
+
+Hark file map: `hark/index.ts` (thin orchestration: tool, command, hooks, session state) + `hark/detection.ts` (marker/heuristic detection) + `hark/config.ts` (env readers, key helpers) + `hark/reply-waiter.ts` (interactive polling) + `hark/live-tracker.ts` (Live Activity card) + `hark/hark-client.ts` + `hark/activity-client.ts` (protocol clients).
 
 The browser extension delegates to `agent-browser`; install it separately and configure an allowed-domain list for safer navigation. `github.ts` requires the GitHub CLI (`gh`) and an authenticated session for private repositories.

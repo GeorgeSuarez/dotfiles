@@ -3,6 +3,7 @@
   "private": true,
   "dependencies": {
     "@ff-labs/pi-fff": "^0.10.6",
+    "@narumitw/pi-btw": "^0.60.0",
     "@narumitw/pi-usage": "^0.60.8",
     "@nicknisi/pi-cloak": "^0.1.2",
     "@plannotator/pi-extension": "^0.27.15",

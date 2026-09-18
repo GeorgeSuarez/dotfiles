@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { htmlToText } from "../agent/extensions/web-tools.ts";
-import actionNotifications, { assistantText, detectActionRequired, errorSnippet, harkVerbosity, inferReplyType, isAnswerable, liveActivityEnabled, setHarkVerbosityOverride, verbosityAllows } from "../agent/extensions/hark/index.ts";
+import actionNotifications, { assistantText, detectActionRequired, doneSummary, errorSnippet, harkVerbosity, inferReplyType, isAnswerable, liveActivityEnabled, setHarkVerbosityOverride, verbosityAllows } from "../agent/extensions/hark/index.ts";
 import { createActivityClient } from "../agent/extensions/hark/activity-client.ts";
 import { createHarkClient } from "../agent/extensions/hark/hark-client.ts";
 
@@ -46,7 +46,18 @@ describe("action notifications", () => {
 		] })).toBe("Please confirm.");
 	});
 
-	test("sends an action-required Hark notification after the agent settles", async () => {
+	test("summarizes finished work for the done push", () => {
+		expect(doneSummary("Fixed the flaky test and restarted the worker. All green."))
+			.toBe("Fixed the flaky test and restarted the worker. All green.");
+		expect(doneSummary("Fixed the bug. Tests pass. Should I use tabs?"))
+			.toBe("Fixed the bug. Tests pass.");
+		expect(doneSummary("Done.\n```sh\nrm -rf /\n```\n[[PI_ACTION_REQUIRED: none]]"))
+			.toBe("Done.");
+		expect(doneSummary("")).toBeUndefined();
+		expect(doneSummary("```js\nfoo()\n```")).toBeUndefined();
+	});
+
+	test("sends a done Hark notification with summary after the agent settles", async () => {
 		const previousValues = {
 			enabled: process.env.PI_ACTION_NOTIFICATIONS,
 			channel: process.env.PI_ACTION_NOTIFICATIONS_CHANNEL,
@@ -100,6 +111,119 @@ describe("action notifications", () => {
 			else process.env.PI_HARK_WEBHOOK_URL = previousValues.webhook;
 			if (previousValues.reply === undefined) delete process.env.PI_ACTION_REPLY;
 			else process.env.PI_ACTION_REPLY = previousValues.reply;
+			globalThis.fetch = previousValues.fetch;
+		}
+	});
+
+	test("sends a done Hark notification with summary after the agent settles", async () => {
+		const previousValues = {
+			enabled: process.env.PI_ACTION_NOTIFICATIONS,
+			channel: process.env.PI_ACTION_NOTIFICATIONS_CHANNEL,
+			webhook: process.env.PI_HARK_WEBHOOK_URL,
+			done: process.env.PI_HARK_DONE_SUMMARY,
+			fetch: globalThis.fetch,
+		};
+		const requests = [];
+		process.env.PI_ACTION_NOTIFICATIONS = "on";
+		process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = "hark";
+		process.env.PI_HARK_WEBHOOK_URL = "https://hark.ryan.ceo/hooks/test-token";
+		delete process.env.PI_HARK_DONE_SUMMARY;
+		globalThis.fetch = async (url, init) => {
+			requests.push({ url, init });
+			return new Response(JSON.stringify({ ok: true, eventId: "evt_done", delivered: 1 }), { status: 200 });
+		};
+
+		try {
+			const handlers = new Map();
+			actionNotifications({
+				on: (event, handler) => handlers.set(event, handler),
+				registerCommand: () => {},
+				registerTool: () => {},
+			});
+			const ctx = {
+				hasUI: false,
+				mode: "json",
+				sessionManager: {
+					getSessionId: () => "session-1",
+					getLeafId: () => "leaf-1",
+				},
+			};
+			await handlers.get("message_end")({
+				message: {
+					role: "assistant",
+					content: [{ type: "text", text: "Fixed the flaky test and updated the docs. All green." }],
+				},
+			}, ctx);
+			await handlers.get("agent_settled")({}, ctx);
+
+			expect(requests).toHaveLength(1);
+			expect(requests[0].url).toBe("https://hark.ryan.ceo/hooks/test-token");
+			expect(JSON.parse(requests[0].init.body).body).toBe("Pi done in Pi: Fixed the flaky test and updated the docs. All green.");
+			expect(requests[0].init.headers["Idempotency-Key"]).toMatch(/^pi-done:session-1:leaf-1:\d+:[0-9a-f]+$/);
+		} finally {
+			if (previousValues.enabled === undefined) delete process.env.PI_ACTION_NOTIFICATIONS;
+			else process.env.PI_ACTION_NOTIFICATIONS = previousValues.enabled;
+			if (previousValues.channel === undefined) delete process.env.PI_ACTION_NOTIFICATIONS_CHANNEL;
+			else process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = previousValues.channel;
+			if (previousValues.webhook === undefined) delete process.env.PI_HARK_WEBHOOK_URL;
+			else process.env.PI_HARK_WEBHOOK_URL = previousValues.webhook;
+			if (previousValues.done === undefined) delete process.env.PI_HARK_DONE_SUMMARY;
+			else process.env.PI_HARK_DONE_SUMMARY = previousValues.done;
+			globalThis.fetch = previousValues.fetch;
+		}
+	});
+
+	test("skips the done Hark notification when PI_HARK_DONE_SUMMARY=off", async () => {
+		const previousValues = {
+			enabled: process.env.PI_ACTION_NOTIFICATIONS,
+			channel: process.env.PI_ACTION_NOTIFICATIONS_CHANNEL,
+			webhook: process.env.PI_HARK_WEBHOOK_URL,
+			done: process.env.PI_HARK_DONE_SUMMARY,
+			fetch: globalThis.fetch,
+		};
+		const requests = [];
+		process.env.PI_ACTION_NOTIFICATIONS = "on";
+		process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = "hark";
+		process.env.PI_HARK_WEBHOOK_URL = "https://hark.ryan.ceo/hooks/test-token";
+		process.env.PI_HARK_DONE_SUMMARY = "off";
+		globalThis.fetch = async (url, init) => {
+			requests.push({ url, init });
+			return new Response(JSON.stringify({ ok: true, eventId: "evt_done", delivered: 1 }), { status: 200 });
+		};
+
+		try {
+			const handlers = new Map();
+			actionNotifications({
+				on: (event, handler) => handlers.set(event, handler),
+				registerCommand: () => {},
+				registerTool: () => {},
+			});
+			const ctx = {
+				hasUI: false,
+				mode: "json",
+				sessionManager: {
+					getSessionId: () => "session-1",
+					getLeafId: () => "leaf-1",
+				},
+			};
+			await handlers.get("message_end")({
+				message: {
+					role: "assistant",
+					content: [{ type: "text", text: "Fixed the flaky test. All green." }],
+				},
+			}, ctx);
+			await handlers.get("agent_settled")({}, ctx);
+
+			expect(requests).toHaveLength(0);
+		} finally {
+			if (previousValues.enabled === undefined) delete process.env.PI_ACTION_NOTIFICATIONS;
+			else process.env.PI_ACTION_NOTIFICATIONS = previousValues.enabled;
+			if (previousValues.channel === undefined) delete process.env.PI_ACTION_NOTIFICATIONS_CHANNEL;
+			else process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = previousValues.channel;
+			if (previousValues.webhook === undefined) delete process.env.PI_HARK_WEBHOOK_URL;
+			else process.env.PI_HARK_WEBHOOK_URL = previousValues.webhook;
+			if (previousValues.done === undefined) delete process.env.PI_HARK_DONE_SUMMARY;
+			else process.env.PI_HARK_DONE_SUMMARY = previousValues.done;
 			globalThis.fetch = previousValues.fetch;
 		}
 	});
@@ -811,8 +935,10 @@ describe("live activities", () => {
 		const previousFetch = globalThis.fetch;
 		const previousLive = process.env.PI_HARK_LIVE_ACTIVITY;
 		const previousWebhook = process.env.PI_HARK_WEBHOOK_URL;
+		const previousChannel = process.env.PI_ACTION_NOTIFICATIONS_CHANNEL;
 		process.env.PI_HARK_LIVE_ACTIVITY = "on";
 		process.env.PI_HARK_WEBHOOK_URL = "https://hark.ryan.ceo/hooks/test-token";
+		process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = "terminal";
 		const requests = [];
 		globalThis.fetch = async (url, init) => {
 			requests.push({ url, init });
@@ -848,6 +974,8 @@ describe("live activities", () => {
 			else process.env.PI_HARK_LIVE_ACTIVITY = previousLive;
 			if (previousWebhook === undefined) delete process.env.PI_HARK_WEBHOOK_URL;
 			else process.env.PI_HARK_WEBHOOK_URL = previousWebhook;
+			if (previousChannel === undefined) delete process.env.PI_ACTION_NOTIFICATIONS_CHANNEL;
+			else process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = previousChannel;
 		}
 	});
 });
