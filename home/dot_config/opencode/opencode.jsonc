@@ -21,22 +21,22 @@
     "cloudflare-bindings": {
       "type": "remote",
       "url": "https://bindings.mcp.cloudflare.com/mcp",
-      "enabled": true,
+      "enabled": false,
       "oauth": {},
     },
     "cloudflare-builds": {
       "type": "remote",
       "url": "https://builds.mcp.cloudflare.com/mcp",
-      "enabled": true,
+      "enabled": false,
       "oauth": {},
     },
     "cloudflare-observability": {
       "type": "remote",
       "url": "https://observability.mcp.cloudflare.com/mcp",
-      "enabled": true,
+      "enabled": false,
       "oauth": {},
     },
-    "chrome-devtools": { "type": "local", "command": ["npx", "-y", "chrome-devtools-mcp@latest"] },
+    "chrome-devtools": { "type": "local", "command": ["bunx", "chrome-devtools-mcp@1.9.0"] },
   },
   "plugins": [
     "@dietrichgebert/ponytail"

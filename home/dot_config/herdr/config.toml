@@ -12,7 +12,8 @@ default_shell = "zsh"
 channel = "stable"
 
 [keys]
-prefix = "ctrl+a"
+# prefix ctrl+space: avoids collision with tmux C-a when herdr runs nested inside tmux
+prefix = "ctrl+space"
 
 # Prefix-mode actions
 split_vertical = "prefix+backslash"
@@ -78,4 +79,4 @@ position = "top-right"
 
 [experimental]
 kitty_graphics = true
-pane_history = false
+pane_history = true

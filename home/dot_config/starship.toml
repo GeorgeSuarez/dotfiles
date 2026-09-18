@@ -1,26 +1,44 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
+palette = 'tokyo-night'
+command_timeout = 200
+
 format = """
-[░▒▓](#a3aed2)\
+[░▒▓](lavender)\
 $os\
-[](bg:#769ff0 fg:#a3aed2)\
+[](bg:blue fg:lavender)\
 $directory\
-[](fg:#769ff0 bg:#394260)\
+[](fg:blue bg:bg2)\
 $git_branch\
 $git_status\
-[](fg:#394260 bg:#212736)\
+[](fg:bg2 bg:bg1)\
 $nodejs\
 $bun\
 $rust\
-$golang\
-$php\
-[](fg:#212736 bg:#1d2230)\
-$time\
-[ ](fg:#1d2230)\
+$python\
+[](fg:bg1 bg:bg0)\
+$cmd_duration\
+[ ](fg:bg0)\
 \n$character"""
 
+[palettes.tokyo-night]
+lavender = "#a3aed2"
+blue = "#769ff0"
+bg2 = "#394260"
+bg1 = "#212736"
+bg0 = "#1d2230"
+fg = "#e3e5e5"
+muted = "#a0a9cb"
+dark = "#090c0c"
+green = "#9ece6a"
+red = "#f7768e"
+
+[character]
+success_symbol = "[❯](bold fg:green)"
+error_symbol = "[✗](bold fg:red)"
+
 [directory]
-style = "fg:#e3e5e5 bg:#769ff0"
+style = "fg:fg bg:blue"
 format = "[ $path ]($style)"
 truncation_length = 3
 truncation_symbol = "…/"
@@ -33,46 +51,58 @@ truncation_symbol = "…/"
 
 [git_branch]
 symbol = ""
-style = "bg:#394260"
-format = '[[ $symbol $branch ](fg:#769ff0 bg:#394260)]($style)'
+style = "bg:bg2"
+format = '[[ $symbol $branch ](fg:blue bg:bg2)]($style)'
 
 [git_status]
-style = "bg:#394260"
-format = '[[($all_status$ahead_behind )](fg:#769ff0 bg:#394260)]($style)'
+style = "bg:bg2"
+format = '[[($all_status$ahead_behind )](fg:blue bg:bg2)]($style)'
 
 [nodejs]
 symbol = ""
-style = "bg:#212736"
-format = '[[ $symbol ($version) ](fg:#769ff0 bg:#212736)]($style)'
+style = "bg:bg1"
+format = '[[ $symbol ($version) ](fg:blue bg:bg1)]($style)'
 
 [bun]
 symbol = ""
-style = "bg:#212736"
-format = '[[ $symbol ($version) ](fg:#769ff0 bg:#212736)]($style)'
+style = "bg:bg1"
+format = '[[ $symbol ($version) ](fg:blue bg:bg1)]($style)'
 
 [rust]
 symbol = ""
-style = "bg:#212736"
-format = '[[ $symbol ($version) ](fg:#769ff0 bg:#212736)]($style)'
+style = "bg:bg1"
+format = '[[ $symbol ($version) ](fg:blue bg:bg1)]($style)'
+
+[python]
+symbol = ""
+style = "bg:bg1"
+format = '[[ $symbol ($version )($virtualenv )](fg:blue bg:bg1)]($style)'
 
 [golang]
+disabled = true
 symbol = ""
-style = "bg:#212736"
-format = '[[ $symbol ($version) ](fg:#769ff0 bg:#212736)]($style)'
+style = "bg:bg1"
+format = '[[ $symbol ($version) ](fg:blue bg:bg1)]($style)'
 
 [php]
+disabled = true
 symbol = ""
-style = "bg:#212736"
-format = '[[ $symbol ($version) ](fg:#769ff0 bg:#212736)]($style)'
+style = "bg:bg1"
+format = '[[ $symbol ($version) ](fg:blue bg:bg1)]($style)'
+
+[cmd_duration]
+min_time = 500
+style = "bg:bg0"
+format = '[[  $duration ](fg:muted bg:bg0)]($style)'
 
 [time]
-disabled = false
+disabled = true
 time_format = "%R" # Hour:Minute Format
-style = "bg:#1d2230"
-format = '[[  $time ](fg:#a0a9cb bg:#1d2230)]($style)'
+style = "bg:bg0"
+format = '[[  $time ](fg:muted bg:bg0)]($style)'
 
 [os]
-style = "bg:#a3aed2 fg:#090c0c"
+style = "bg:lavender fg:dark"
 format = "[ $symbol ]($style)"
 disabled = false
 

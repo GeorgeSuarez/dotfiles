@@ -3,3 +3,21 @@
 	email = georgesuarezdev@gmail.com
 [color]
 	ui = auto
+[init]
+	defaultBranch = main
+[pull]
+	rebase = true
+[push]
+	autoSetupRemote = true
+[fetch]
+	prune = true
+[rerere]
+	enabled = true
+[core]
+	editor = nvim
+[merge]
+	conflictstyle = zdiff3
+[diff]
+	colorMoved = zebra
+[commit]
+	verbose = true

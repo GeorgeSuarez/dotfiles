@@ -1,11 +1,11 @@
 # Terminal Theme
-theme = Cyberpunk
+theme = TokyoNight Storm
 
 # Updates
 auto-update-channel = tip
 
 # Fonts
-font-family = "FiraCode Nerd Font Mono Ret"
+font-family = "JetBrainsMono Nerd Font Mono"
 font-size = 16
 font-style-bold = Bold
 
@@ -21,14 +21,14 @@ quit-after-last-window-closed = true
 # Clipboard settings
 clipboard-read = allow
 clipboard-write = allow
+copy-on-select = true
 
 # Window settings
 window-width = 90
 window-height = 30
-window-vsync = false
 
 # Background Settings
-background-opacity = 0.50
+background-opacity = 0.90
 background-blur = macos-glass-regular
 
 # MacOS Options

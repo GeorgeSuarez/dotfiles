@@ -18,6 +18,11 @@ source $ZSH/oh-my-zsh.sh
 
 # User configuration
 
+# History tuning (overrides oh-my-zsh defaults — must stay after oh-my-zsh.sh).
+HISTSIZE=50000
+SAVEHIST=50000
+setopt share_history hist_ignore_all_dups hist_reduce_blanks
+
 # export MANPATH="/usr/local/man:$MANPATH"
 export PATH="/usr/local/opt/python/libexec/bin:$PATH"
 
@@ -50,10 +55,8 @@ alias dotdiff='chezmoi status && chezmoi diff'
 alias sync-dotfiles='chezmoi diff && chezmoi apply'
 push-dotfiles() { dotrepo && git status --short && git add -u && git diff --cached && git commit && git push; }
 
-source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
-source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-
-eval "$(starship init zsh)"
+[[ -f /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]] && source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+[[ -f /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] && source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
 
@@ -64,12 +67,19 @@ PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
-# Mole shell completion
-if output="$(mole completion zsh 2>/dev/null)"; then eval "$output"; fi
+# Mole shell completion (cached — regen with: mole completion zsh > ~/.cache/mole.zsh)
+[[ -f "$HOME/.cache/mole.zsh" ]] && source "$HOME/.cache/mole.zsh"
 
+# NOTE: cargo env is loaded once via ~/.zshenv; ~/.local/bin/env only adds
+# ~/.local/bin to PATH (no cargo/rustup logic) — no duplicate to remove.
 [[ -f "$HOME/.local/bin/env" ]] && . "$HOME/.local/bin/env"
 
 # Maestro (guarded so reloads don't duplicate PATH — typeset -U above also helps).
 [[ -d "$HOME/.maestro/bin" ]] && [[ ":$PATH:" != *":$HOME/.maestro/bin:"* ]] && export PATH="$PATH:$HOME/.maestro/bin"
 
-export ANDROID_HOME=$HOME/Library/Android/sdk && export PATH=$PATH:$ANDROID_HOME/emulator && export PATH=$PATH:$ANDROID_HOME/platform-tools
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+[[ -d "$ANDROID_HOME/emulator" ]] && export PATH="$PATH:$ANDROID_HOME/emulator"
+[[ -d "$ANDROID_HOME/platform-tools" ]] && export PATH="$PATH:$ANDROID_HOME/platform-tools"
+
+# Starship prompt — must stay last so it can wrap precmd hooks set above.
+eval "$(starship init zsh)"
