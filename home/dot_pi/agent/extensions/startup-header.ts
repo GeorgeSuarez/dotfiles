@@ -1,20 +1,19 @@
 import { Dirent, existsSync, readdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, relative } from "node:path";
-import type { ExtensionAPI, Skill, Theme } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, Theme } from "@earendil-works/pi-coding-agent";
 import {
   CONFIG_DIR_NAME,
   VERSION,
   getAgentDir,
   loadProjectContextFiles,
-  loadSkills,
 } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
 
 /**
  * Startup header as a table with the official Pi logo (pi.dev/logo-auto.svg)
  * in its own column and version, model, cwd, AGENTS.md, MCP servers, tools,
- * skills alongside it.
+ * and extensions alongside it.
  * Pair with `quietStartup: true`, which hides the built-in header plus the
  * [Context]/[Skills]/[Prompts]/[Extensions]/[Themes] lists.
  * `pi --verbose` still forces full output.
@@ -67,21 +66,6 @@ function readMcpEntries(): string[] {
       servers?: Record<string, { tools?: unknown[] }>;
     };
     return formatMcpEntries(cache.servers);
-  } catch {
-    return [];
-  }
-}
-
-/**
- * Disk scan via pi's own loader: user dir (<agentDir>/skills) plus project
- * dir (<cwd>/.pi/skills). The catalogue isn't built until the first turn,
- * so this gives the header a real count at startup.
- * Misses package/git skills; before_agent_start replaces this with pi's
- * authoritative catalogue after the first turn.
- */
-export function scanSkills(cwd: string, agentDir = getAgentDir()): Skill[] {
-  try {
-    return loadSkills({ cwd, agentDir, skillPaths: [], includeDefaults: true }).skills;
   } catch {
     return [];
   }
@@ -178,7 +162,6 @@ export interface LoadedInfo {
   cwdDir: string;
   mcps: string;
   tools: string;
-  skills: string;
   agents: string;
   extensions: string;
 }
@@ -223,10 +206,6 @@ function buildTable(theme: Theme, width: number, loaded: LoadedInfo): string[] {
     {
       text: `Tool(s): ${loaded.tools}`,
       color: (s) => (loaded.tools === "none" ? dim(s) : theme.fg("mdCode", s)),
-    },
-    {
-      text: `Skill(s): ${loaded.skills}`,
-      color: (s) => (loaded.skills === "none" ? dim(s) : theme.fg("warning", s)),
     },
     {
       text: `Extension(s): ${loaded.extensions}`,
@@ -279,18 +258,12 @@ export default function startupHeader(pi: ExtensionAPI) {
     cwdDir: "none",
     mcps: "none",
     tools: "none",
-    skills: "none",
     agents: "none",
     extensions: "none",
   };
   let requestRender: (() => void) | undefined;
 
-  function snapshot(
-    skills: Skill[],
-    agentsPaths: string[],
-    cwd: string,
-    modelLabel: string,
-  ): void {
+  function snapshot(agentsPaths: string[], cwd: string, modelLabel: string): void {
     const entries = readMcpEntries();
     let toolNames: string[] = [];
     try {
@@ -298,7 +271,6 @@ export default function startupHeader(pi: ExtensionAPI) {
     } catch {
       toolNames = [];
     }
-    const skillNames = skills.map((s) => s.name);
     const extPaths = new Set<string>(scanExtensionPaths(cwd));
     try {
       for (const t of pi.getAllTools?.() ?? []) {
@@ -321,7 +293,6 @@ export default function startupHeader(pi: ExtensionAPI) {
       cwdDir: displayCwd(cwd),
       mcps: entries.length > 0 ? formatNameList(entries) : "none",
       tools: formatNameList(toolNames),
-      skills: formatNameList(skillNames),
       extensions: formatNameList(extNames),
       agents:
         agentsPaths.length === 0 ? "none" : agentsPaths.map((p) => displayPath(p, cwd)).join(", "),
@@ -331,12 +302,7 @@ export default function startupHeader(pi: ExtensionAPI) {
   pi.on("session_start", async (_event, ctx) => {
     if (ctx.mode !== "tui") return;
     const modelLabel = ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : "no-model";
-    snapshot(
-      scanSkills(ctx.cwd),
-      scanAgentsFiles(ctx.cwd).map((f) => f.path),
-      ctx.cwd,
-      modelLabel,
-    );
+    snapshot(scanAgentsFiles(ctx.cwd).map((f) => f.path), ctx.cwd, modelLabel);
     ctx.ui.setHeader((tui, _theme) => {
       requestRender = () => tui.requestRender();
       return {
@@ -349,11 +315,8 @@ export default function startupHeader(pi: ExtensionAPI) {
   // MCP tools register asynchronously; refresh once the system prompt is built.
   pi.on("before_agent_start", async (event, ctx) => {
     const cwd = event.systemPromptOptions?.cwd || ctx?.cwd || "";
-    const modelLabel = ctx?.model
-      ? `${ctx.model.provider}/${ctx.model.id}`
-      : loaded.model;
+    const modelLabel = ctx?.model ? `${ctx.model.provider}/${ctx.model.id}` : loaded.model;
     snapshot(
-      event.systemPromptOptions?.skills ?? [],
       (event.systemPromptOptions?.contextFiles ?? []).map((f) => f.path),
       cwd,
       modelLabel,

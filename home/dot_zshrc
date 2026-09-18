@@ -28,6 +28,9 @@ export PATH="/usr/local/opt/python/libexec/bin:$PATH"
 
 export EDITOR="nvim"
 
+# Pi action-notifications → Hark run-tracker card on the iPhone Lock Screen.
+export PI_HARK_LIVE_ACTIVITY=on
+
 alias reload-zsh="source ~/.zshrc"
 alias ezsh="nvim ~/.zshrc"
 alias envim="nvim ~/.config/nvim/"

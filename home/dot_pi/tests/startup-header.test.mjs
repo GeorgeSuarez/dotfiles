@@ -10,7 +10,6 @@ import startupHeader, {
   formatMcpEntries,
   formatNameList,
   scanAgentsFiles,
-  scanSkills,
 } from "../agent/extensions/startup-header.ts";
 import { VERSION } from "@earendil-works/pi-coding-agent";
 
@@ -20,7 +19,6 @@ const loaded = {
   cwdDir: "~/proj",
   mcps: "(1) maestro",
   tools: "(3) bash, read, write",
-  skills: "(1) tdd",
   agents: "~/.pi/AGENTS.md",
   extensions: "(1) startup-header",
 };
@@ -44,12 +42,12 @@ function captureHeader() {
 }
 
 describe("startup header table", () => {
-  test("renders logo, version, model, mcps, tools, skills within width", async () => {
+  test("renders logo, version, model, mcps, tools within width", async () => {
     const { pi, ctx, handlers, getFactory } = captureHeader();
     await startupHeader(pi);
     await handlers.session_start({}, ctx);
     await handlers.before_agent_start(
-      { systemPromptOptions: { skills: [{ name: "tdd" }], cwd: ctx.cwd } },
+      { systemPromptOptions: { cwd: ctx.cwd } },
       ctx,
     );
     const lines = getFactory()( { requestRender() {} }, theme).render(80).map((l) => stripTerminalSequences(l));
@@ -59,7 +57,7 @@ describe("startup header table", () => {
     expect(lines.some((l) => l.includes(VERSION))).toBe(true);
     expect(lines.some((l) => l.includes("Model:"))).toBe(true);
     expect(lines.some((l) => l.includes("Cwd:"))).toBe(true);
-    expect(lines.some((l) => l.includes("Skill(s): (1) tdd"))).toBe(true);
+    expect(lines.some((l) => l.includes("Skill(s):"))).toBe(false);
     expect(lines.some((l) => l.includes("Context:"))).toBe(true);
     expect(lines.some((l) => l.includes("Extension(s):"))).toBe(true);
     for (const line of lines) expect([...line].length).toBeLessThanOrEqual(80);
@@ -79,7 +77,7 @@ describe("startup header table", () => {
     ]);
     expect(formatMcpEntries(undefined)).toEqual([]);
     expect(
-      buildHeaderLines(theme, 80, { ...loaded, mcps: "none", tools: "none", skills: "none" })
+      buildHeaderLines(theme, 80, { ...loaded, mcps: "none", tools: "none" })
         .join("\n"),
     ).toContain("MCP(s): none");
   });
@@ -92,24 +90,6 @@ describe("startup header table", () => {
     expect(out.startsWith("(12) ")).toBe(true);
     expect(out).toContain("+4 more");
     expect(out.includes("tool-11")).toBe(false);
-  });
-
-  test("scanSkills reads user and project skill dirs", () => {
-    const agentDir = mkdtempSync(join(tmpdir(), "pi-header-agent-"));
-    mkdirSync(join(agentDir, "skills", "global-skill"), { recursive: true });
-    writeFileSync(
-      join(agentDir, "skills", "global-skill", "SKILL.md"),
-      "---\nname: global-skill\ndescription: g\n---\n",
-    );
-    const cwd = mkdtempSync(join(tmpdir(), "pi-header-proj-"));
-    mkdirSync(join(cwd, ".pi", "skills", "proj-skill"), { recursive: true });
-    writeFileSync(
-      join(cwd, ".pi", "skills", "proj-skill", "SKILL.md"),
-      "---\nname: proj-skill\ndescription: p\n---\n",
-    );
-    const names = scanSkills(cwd, agentDir).map((s) => s.name).sort();
-    expect(names).toEqual(["global-skill", "proj-skill"]);
-    expect(scanSkills(join(cwd, "nope"), join(cwd, "nope"))).toEqual([]);
   });
 
   test("scanAgentsFiles reads agentDir and ancestor AGENTS.md", () => {
