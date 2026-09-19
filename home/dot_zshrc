@@ -84,5 +84,7 @@ export ANDROID_HOME="$HOME/Library/Android/sdk"
 [[ -d "$ANDROID_HOME/emulator" ]] && export PATH="$PATH:$ANDROID_HOME/emulator"
 [[ -d "$ANDROID_HOME/platform-tools" ]] && export PATH="$PATH:$ANDROID_HOME/platform-tools"
 
+eval "$(direnv hook zsh)"
+
 # Starship prompt — must stay last so it can wrap precmd hooks set above.
 eval "$(starship init zsh)"
