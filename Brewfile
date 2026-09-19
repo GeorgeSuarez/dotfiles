@@ -17,6 +17,7 @@ brew "lazygit"
 brew "zsh-autosuggestions"
 brew "zsh-syntax-highlighting"
 brew "herdr"
+brew "direnv"
 brew "bitwarden-cli"
 
 # GUI apps
