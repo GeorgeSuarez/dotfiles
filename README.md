@@ -7,7 +7,7 @@ My macOS dotfiles, managed with [chezmoi](https://chezmoi.io).
 ```
 <repo>/                  # git root; can be cloned anywhere
 ├── home/                # ← chezmoi sourceDir: every managed file lives here
-│   ├── dot_zshrc → ~/.zshrc, dot_tmux.conf, dot_gitconfig, …
+│   ├── dot_zshrc → ~/.zshrc, dot_tmux.conf, dot_gitconfig
 │   ├── dot_config/… (nvim, opencode, ghostty, herdr, starship)
 │   ├── dot_agents/ → ~/.agents  (global agent skills)
 │   └── dot_pi/ → ~/.pi  (Pi agent harness, not a Raspberry Pi)
@@ -17,7 +17,7 @@ My macOS dotfiles, managed with [chezmoi](https://chezmoi.io).
 
 ## What's tracked
 
-- Shell: `.zshrc` (starship prompt), `.zshenv`, `.zprofile`, `.tmux.conf`, `.gitconfig`
+- Shell: `.zshrc` (starship prompt), `.tmux.conf`, `.gitconfig` (`.zshenv`/`.zprofile` are machine-generated, not managed)
 - `~/.config/nvim`, `~/.config/opencode` (`opencode.jsonc`, `tui.json`, plugins), `~/.config/ghostty`, `~/.config/herdr`, `~/.config/starship.toml`
 - `~/.agents/` — global agent skills (shared across harnesses)
 - `~/.pi/agent/` — pi-specific extensions, settings, prompts, tests
