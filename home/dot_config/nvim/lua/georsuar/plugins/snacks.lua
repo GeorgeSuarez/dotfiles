@@ -7,19 +7,8 @@ return {
         bigFile = { enabled = true },
         dashboard = { enabled = true },
         input = { enabled = true },
-        explorer = {
-            enabled = true,
-            replace_netrw = true,
-        },
-
         picker = {
             enabled = true,
-            sources = {
-                explorer = {
-                    diagnostics = true,
-                    git_status = true,
-                },
-            },
         },
         notifier = {
             enabled = true,
@@ -37,20 +26,6 @@ return {
         bufdelete = { enabled = true },
     },
     keys = {
-        {
-            "<leader>ee",
-            function()
-                Snacks.explorer()
-            end,
-            desc = "File Explorer",
-        },
-        {
-            "<leader>er",
-            function()
-                Snacks.explorer.reveal()
-            end,
-            desc = "Reveal current file in explorer",
-        },
         {
             "<leader>ff",
             function()
