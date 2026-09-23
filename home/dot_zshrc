@@ -7,6 +7,11 @@ DISABLE_AUTO_TITLE="true"
 # Dedupe PATH (keeps Docker/Maestro appends from duplicating on reload).
 typeset -U path PATH
 
+# ~/.local/bin: user-local tools (herdr, chezmoi, gh, eza, rg, node/nvm shims).
+# Self-contained — do not depend on uv's env file, which is absent without uv.
+# Keep early: later blocks (eza aliases, etc.) guard on `command -v`.
+[[ -d "$HOME/.local/bin" ]] && export PATH="$HOME/.local/bin:$PATH"
+
 # Which plugins would you like to load?
 # Standard plugins can be found in $ZSH/plugins/
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
@@ -29,7 +34,7 @@ export PATH="/usr/local/opt/python/libexec/bin:$PATH"
 export EDITOR="nvim"
 
 # Pi action-notifications → Hark run-tracker card on the iPhone Lock Screen.
-export PI_HARK_LIVE_ACTIVITY=on
+export PI_HARK_LIVE_ACTIVITY=off
 
 alias reload-zsh="source ~/.zshrc"
 alias ezsh="nvim ~/.zshrc"
@@ -39,7 +44,15 @@ alias py="python3"
 alias python="python3"
 alias cr="cargo run"
 alias oc="opencode"
-alias oc2="opencode2"
+alias bat="batcat"
+
+# eza — icon-rich ls replacement (guarded: not installed on every machine)
+if command -v eza >/dev/null 2>&1; then
+  alias ls='eza --icons --group-directories-first'
+  alias ll='eza -l --icons --git --group-directories-first --time-style=long-iso'
+  alias la='eza -la --icons --git --group-directories-first'
+  alias lt='eza --tree --icons --level=2'
+fi
 
 # Machine-local aliases (not synced): projects, custom tools
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
@@ -79,10 +92,6 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 # Mole shell completion (cached — regen with: mole completion zsh > ~/.cache/mole.zsh)
 [[ -f "$HOME/.cache/mole.zsh" ]] && source "$HOME/.cache/mole.zsh"
 
-# NOTE: cargo env is loaded once via ~/.zshenv; ~/.local/bin/env only adds
-# ~/.local/bin to PATH (no cargo/rustup logic) — no duplicate to remove.
-[[ -f "$HOME/.local/bin/env" ]] && . "$HOME/.local/bin/env"
-
 # Maestro (guarded so reloads don't duplicate PATH — typeset -U above also helps).
 [[ -d "$HOME/.maestro/bin" ]] && [[ ":$PATH:" != *":$HOME/.maestro/bin:"* ]] && export PATH="$PATH:$HOME/.maestro/bin"
 
@@ -91,6 +100,8 @@ export ANDROID_HOME="$HOME/Library/Android/sdk"
 [[ -d "$ANDROID_HOME/platform-tools" ]] && export PATH="$PATH:$ANDROID_HOME/platform-tools"
 
 command -v direnv >/dev/null 2>&1 && eval "$(direnv hook zsh)"
+
+eval "$(zoxide init zsh)"
 
 # Starship prompt — must stay last so it can wrap precmd hooks set above.
 eval "$(starship init zsh)"

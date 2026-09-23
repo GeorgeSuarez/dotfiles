@@ -18,7 +18,7 @@ return {
                 markdown = { "oxfmt" },
                 graphql = { "oxfmt" },
                 lua = { "stylua" },
-                python = { "isort", "black" },
+                python = { "ruff" },
                 c = { "clang-format" },
                 cpp = { "clang-format" },
                 go = { "gofmt" },
@@ -30,17 +30,17 @@ return {
                 },
             },
             format_on_save = {
+                async = true,
+                timeout_ms = 500,
                 lsp_fallback = true,
-                async = false,
-                timeout_ms = 5000,
             },
         })
 
         vim.keymap.set({ "n", "v" }, "<leader>mp", function()
             conform.format({
                 lsp_fallback = true,
-                async = false,
-                timeout_ms = 1000,
+                async = true,
+                timeout_ms = 500,
             })
         end, { desc = "Format file or range (in visual mode)" })
     end,
