@@ -49,14 +49,14 @@ return {
             desc = "Grep current word/selection",
         },
         {
-            "<leader>n",
+            "<leader>nh",
             function()
                 Snacks.notifier.show_history()
             end,
             desc = "Notification History",
         },
         {
-            "<leader>un",
+            "<leader>nd",
             function()
                 Snacks.notifier.hide()
             end,
@@ -79,7 +79,7 @@ return {
         {
             "<leader>td",
             function()
-                Snacks.toggle.diagnostics().toggle()
+                Snacks.toggle.diagnostics():toggle()
             end,
             desc = "Toggle Diagnostics",
         },
@@ -91,9 +91,21 @@ return {
             desc = "Maximize/minimize a split",
         },
         {
-            "<leader>th",
+            "<leader>ih",
             function()
-                Snacks.toggle.inlay_hints():toggle()
+                Snacks.toggle({
+                    name = "Inlay Hints",
+                    get = function()
+                        return vim.lsp.inlay_hint.is_enabled()
+                    end,
+                    set = function(state)
+                        if state then
+                            vim.lsp.inlay_hint.enable(true)
+                        else
+                            vim.lsp.inlay_hint.enable(false)
+                        end
+                    end,
+                })
             end,
             desc = "Toggle Inlay Hints",
         },

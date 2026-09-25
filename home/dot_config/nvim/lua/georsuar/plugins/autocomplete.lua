@@ -3,12 +3,11 @@ return {
     version = "1.*",
     event = "VeryLazy",
     dependencies = {
-        { "L3MON4D3/LuaSnip" },
+        "L3MON4D3/LuaSnip",
         "rafamadriz/friendly-snippets",
     },
     opts = {
         keymap = {
-            preset = "default",
             ["<C-k>"] = { "select_prev", "show_signature", "hide_signature", "fallback" }, -- previous suggestion
             ["<C-j>"] = { "select_next", "fallback" }, -- next suggestion
             ["<C-u>"] = { "scroll_documentation_up", "fallback" },

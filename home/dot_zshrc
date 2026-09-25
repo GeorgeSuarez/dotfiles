@@ -103,5 +103,25 @@ command -v direnv >/dev/null 2>&1 && eval "$(direnv hook zsh)"
 
 eval "$(zoxide init zsh)"
 
+# Windows Terminal shell integration (OSC 9;9 + OSC 133) — WSL only.
+# Reports cwd via wslpath so duplicate tab/pane and same-dir splits work,
+# and marks command start/finish for scrollbar marks + right-click select-output.
+# Prepended to precmd_functions so $? is still the last command's exit code.
+# (Starship native integration is still upstream: starship#5463.)
+# See nvim docs/wsl2-windows-terminal.md §3.
+if [[ -n "$WT_SESSION" ]] && command -v wslpath >/dev/null 2>&1; then
+  _wt_report_cwd() { printf '\e]9;9;%s\e\\' "$(wslpath -w "$PWD" 2>/dev/null)" }
+  _wt_preexec() { printf '\e]133;C\e\\' }
+  _wt_precmd() {
+    local st=$?
+    printf '\e]133;D;%s\e\\' "$st"
+    _wt_report_cwd
+  }
+  autoload -Uz add-zsh-hook
+  add-zsh-hook chpwd _wt_report_cwd
+  add-zsh-hook preexec _wt_preexec
+  precmd_functions=(_wt_precmd ${precmd_functions[@]})
+fi
+
 # Starship prompt — must stay last so it can wrap precmd hooks set above.
 eval "$(starship init zsh)"

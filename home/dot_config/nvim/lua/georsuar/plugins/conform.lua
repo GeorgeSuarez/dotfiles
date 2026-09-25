@@ -30,8 +30,12 @@ return {
                 },
             },
             format_on_save = {
-                async = true,
                 timeout_ms = 500,
+                lsp_fallback = true,
+            },
+            -- Async formatting must happen after the write completes.
+            -- format_on_save runs at BufWritePre and cannot be async.
+            format_after_save = {
                 lsp_fallback = true,
             },
         })

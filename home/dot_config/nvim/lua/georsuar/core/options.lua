@@ -40,6 +40,28 @@ if vim.env.SSH_TTY == nil and vim.env.SSH_CONNECTION == nil then
     opt.clipboard:append("unnamedplus") -- use system clipboard as default register
 end
 
+-- WSL: explicit clipboard provider with absolute Windows paths.
+-- Survives `appendWindowsPath=false` in /etc/wsl.conf (bare `clip.exe` would
+-- fail with "No provider"). Under WSLg, xclip already syncs to Windows so
+-- the default provider is left alone. See docs/wsl2-windows-terminal.md §5.
+if vim.fn.has("wsl") == 1 then
+    local has_wslg = vim.fn.executable("xclip") == 1 and os.getenv("DISPLAY") ~= nil
+    if not has_wslg then
+        vim.g.clipboard = {
+            name = "WslClipboard",
+            copy = {
+                ["+"] = "/mnt/c/Windows/System32/clip.exe",
+                ["*"] = "/mnt/c/Windows/System32/clip.exe",
+            },
+            paste = {
+                ["+"] = '/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -NoLogo -NoProfile -c [Console]::Out.Write($(Get-Clipboard -Raw).tostring().replace("`r", ""))',
+                ["*"] = '/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -NoLogo -NoProfile -c [Console]::Out.Write($(Get-Clipboard -Raw).tostring().replace("`r", ""))',
+            },
+            cache_enabled = 0,
+        }
+    end
+end
+
 -- split windows
 opt.splitright = true -- split vertical window to the right
 opt.splitbelow = true -- split horizontal window to the bottom
