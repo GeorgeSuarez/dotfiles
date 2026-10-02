@@ -11,9 +11,15 @@
   },
   "dependencies": {
     "@earendil-works/pi-ai": "^0.84.2",
-    "@earendil-works/pi-coding-agent": "^0.84.2",
+    "@earendil-works/pi-coding-agent": "^1.0.0",
     "@earendil-works/pi-tui": "^0.84.2",
     "typebox": "^1.1.38"
   },
-  "packageManager": "npm@11.11.0"
+  "packageManager": "npm@11.11.0",
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "fsevents@2.3.3": true,
+    "protobufjs@7.6.6": true,
+    "@google/genai": true
+  }
 }

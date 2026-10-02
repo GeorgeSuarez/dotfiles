@@ -16,14 +16,8 @@
 [core]
 	editor = nvim
 [merge]
-	conflictstyle = diff3
+	conflictstyle = zdiff3
 [diff]
 	colorMoved = zebra
 [commit]
 	verbose = true
-[credential "https://github.com"]
-	helper = 
-	helper = !/home/georgesuarez/.local/bin/gh auth git-credential
-[credential "https://gist.github.com"]
-	helper = 
-	helper = !/home/georgesuarez/.local/bin/gh auth git-credential

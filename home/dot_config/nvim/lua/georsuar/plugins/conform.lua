@@ -18,7 +18,7 @@ return {
                 markdown = { "oxfmt" },
                 graphql = { "oxfmt" },
                 lua = { "stylua" },
-                python = { "ruff" },
+                python = { "isort", "black" },
                 c = { "clang-format" },
                 cpp = { "clang-format" },
                 go = { "gofmt" },
@@ -30,21 +30,17 @@ return {
                 },
             },
             format_on_save = {
-                timeout_ms = 500,
                 lsp_fallback = true,
-            },
-            -- Async formatting must happen after the write completes.
-            -- format_on_save runs at BufWritePre and cannot be async.
-            format_after_save = {
-                lsp_fallback = true,
+                async = false,
+                timeout_ms = 5000,
             },
         })
 
         vim.keymap.set({ "n", "v" }, "<leader>mp", function()
             conform.format({
                 lsp_fallback = true,
-                async = true,
-                timeout_ms = 500,
+                async = false,
+                timeout_ms = 1000,
             })
         end, { desc = "Format file or range (in visual mode)" })
     end,
