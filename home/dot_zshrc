@@ -12,7 +12,13 @@ typeset -U path PATH
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git common-aliases colorize)
+plugins=(git common-aliases colorize eza)
+
+# eza (modern ls replacements) — zstyle must be set before oh-my-zsh.sh loads the plugin.
+zstyle ':omz:plugins:eza' 'icons' yes
+zstyle ':omz:plugins:eza' 'header' yes
+zstyle ':omz:plugins:eza' 'git-status' yes
+zstyle ':omz:plugins:eza' 'dirs-first' yes
 
 source $ZSH/oh-my-zsh.sh
 
@@ -29,7 +35,7 @@ export PATH="/usr/local/opt/python/libexec/bin:$PATH"
 export EDITOR="nvim"
 
 # Pi action-notifications → Hark run-tracker card on the iPhone Lock Screen.
-export PI_HARK_LIVE_ACTIVITY=on
+export PI_HARK_LIVE_ACTIVITY=off
 
 alias reload-zsh="source ~/.zshrc"
 alias ezsh="nvim ~/.zshrc"
@@ -39,7 +45,6 @@ alias py="python3"
 alias python="python3"
 alias cr="cargo run"
 alias oc="opencode"
-alias oc2="opencode2"
 
 # Machine-local aliases (not synced): projects, custom tools
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
@@ -49,14 +54,10 @@ alias oc2="opencode2"
 #   1. `chezmoi diff` / `chezmoi status` to review live vs source
 #   2. `chezmoi re-add <file>` only the files you intend to keep
 #   3. `chezmoi apply` to push source -> live
-#   4. `push-dotfiles` to commit + push (never `git add -A`; secrets are gitignored but stay cautious)
-# NOTE: `push-dotfiles` used to be an alias. A stale alias in a running
 # shell breaks the function definition below on re-source, so clear first.
-unalias push-dotfiles dotrepo 2>/dev/null || true
 dotrepo() { cd "$(dirname "$(chezmoi source-path)")"; }
 alias dotdiff='chezmoi status && chezmoi diff'
 alias sync-dotfiles='chezmoi diff && chezmoi apply'
-push-dotfiles() { dotrepo && git status --short && git add -u && git diff --cached && git commit && git push; }
 
 [[ -f /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]] && source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 [[ -f /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] && source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
