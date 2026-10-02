@@ -105,7 +105,7 @@ return {
                             vim.lsp.inlay_hint.enable(false)
                         end
                     end,
-                })
+                }):toggle()
             end,
             desc = "Toggle Inlay Hints",
         },
