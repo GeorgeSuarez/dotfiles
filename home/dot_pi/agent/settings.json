@@ -33,5 +33,6 @@
   "enableInstallTelemetry": false,
   "quietStartup": true,
   "tuiMode": "regular",
-  "showCacheMissNotices": true
+  "showCacheMissNotices": true,
+  "hideThinkingBlock": false
 }

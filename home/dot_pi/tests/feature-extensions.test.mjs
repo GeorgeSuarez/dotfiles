@@ -336,8 +336,10 @@ describe("action notifications", () => {
 		const previousFetch = globalThis.fetch;
 		const previousWebhook = process.env.PI_HARK_WEBHOOK_URL;
 		const previousChannel = process.env.PI_ACTION_NOTIFICATIONS_CHANNEL;
+		const previousEnabled = process.env.PI_ACTION_NOTIFICATIONS;
 		process.env.PI_HARK_WEBHOOK_URL = "https://hark.ryan.ceo/hooks/test-token";
 		process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = "hark";
+		process.env.PI_ACTION_NOTIFICATIONS = "on";
 		delete process.env.PI_ACTION_REPLY;
 		const requests = [];
 		const sent = [];
@@ -390,6 +392,8 @@ describe("action notifications", () => {
 			else process.env.PI_HARK_WEBHOOK_URL = previousWebhook;
 			if (previousChannel === undefined) delete process.env.PI_ACTION_NOTIFICATIONS_CHANNEL;
 			else process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = previousChannel;
+			if (previousEnabled === undefined) delete process.env.PI_ACTION_NOTIFICATIONS;
+			else process.env.PI_ACTION_NOTIFICATIONS = previousEnabled;
 		}
 	});
 
@@ -397,8 +401,10 @@ describe("action notifications", () => {
 		const previousFetch = globalThis.fetch;
 		const previousWebhook = process.env.PI_HARK_WEBHOOK_URL;
 		const previousChannel = process.env.PI_ACTION_NOTIFICATIONS_CHANNEL;
+		const previousEnabled = process.env.PI_ACTION_NOTIFICATIONS;
 		process.env.PI_HARK_WEBHOOK_URL = "https://hark.ryan.ceo/hooks/test-token";
 		process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = "hark";
+		process.env.PI_ACTION_NOTIFICATIONS = "on";
 		delete process.env.PI_ACTION_REPLY;
 		const requests = [];
 		const sent = [];
@@ -439,6 +445,8 @@ describe("action notifications", () => {
 			else process.env.PI_HARK_WEBHOOK_URL = previousWebhook;
 			if (previousChannel === undefined) delete process.env.PI_ACTION_NOTIFICATIONS_CHANNEL;
 			else process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = previousChannel;
+			if (previousEnabled === undefined) delete process.env.PI_ACTION_NOTIFICATIONS;
+			else process.env.PI_ACTION_NOTIFICATIONS = previousEnabled;
 		}
 	});
 
@@ -501,6 +509,7 @@ describe("action notifications", () => {
 			channel: process.env.PI_ACTION_NOTIFICATIONS_CHANNEL,
 			webhook: process.env.PI_HARK_WEBHOOK_URL,
 			verbosity: process.env.PI_HARK_VERBOSITY,
+			live: process.env.PI_HARK_LIVE_ACTIVITY,
 			fetch: globalThis.fetch,
 		};
 		const requests = [];
@@ -508,6 +517,7 @@ describe("action notifications", () => {
 		process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = "hark";
 		process.env.PI_HARK_WEBHOOK_URL = "https://hark.ryan.ceo/hooks/test-token";
 		process.env.PI_HARK_VERBOSITY = "all";
+		delete process.env.PI_HARK_LIVE_ACTIVITY;
 		globalThis.fetch = async (url, init) => {
 			requests.push({ url, init });
 			return new Response(JSON.stringify({ ok: true, eventId: "evt_lifecycle", delivered: 1 }), { status: 200 });
@@ -542,19 +552,25 @@ describe("action notifications", () => {
 			else process.env.PI_HARK_WEBHOOK_URL = previousValues.webhook;
 			if (previousValues.verbosity === undefined) delete process.env.PI_HARK_VERBOSITY;
 			else process.env.PI_HARK_VERBOSITY = previousValues.verbosity;
+			if (previousValues.live === undefined) delete process.env.PI_HARK_LIVE_ACTIVITY;
+			else process.env.PI_HARK_LIVE_ACTIVITY = previousValues.live;
 			globalThis.fetch = previousValues.fetch;
 		}
 	});
 
 	test("stays quiet on lifecycle when verbosity is actions", async () => {
 		const previousValues = {
+			enabled: process.env.PI_ACTION_NOTIFICATIONS,
 			channel: process.env.PI_ACTION_NOTIFICATIONS_CHANNEL,
 			webhook: process.env.PI_HARK_WEBHOOK_URL,
 			verbosity: process.env.PI_HARK_VERBOSITY,
+			live: process.env.PI_HARK_LIVE_ACTIVITY,
 			fetch: globalThis.fetch,
 		};
 		const requests = [];
 		delete process.env.PI_HARK_VERBOSITY;
+		delete process.env.PI_HARK_LIVE_ACTIVITY;
+		process.env.PI_ACTION_NOTIFICATIONS = "on";
 		process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = "hark";
 		process.env.PI_HARK_WEBHOOK_URL = "https://hark.ryan.ceo/hooks/test-token";
 		globalThis.fetch = async (url, init) => {
@@ -578,24 +594,30 @@ describe("action notifications", () => {
 			await handlers.get("agent_settled")({}, ctx);
 			expect(requests).toHaveLength(0);
 		} finally {
+			if (previousValues.enabled === undefined) delete process.env.PI_ACTION_NOTIFICATIONS;
+			else process.env.PI_ACTION_NOTIFICATIONS = previousValues.enabled;
 			if (previousValues.channel === undefined) delete process.env.PI_ACTION_NOTIFICATIONS_CHANNEL;
 			else process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = previousValues.channel;
 			if (previousValues.webhook === undefined) delete process.env.PI_HARK_WEBHOOK_URL;
 			else process.env.PI_HARK_WEBHOOK_URL = previousValues.webhook;
 			if (previousValues.verbosity === undefined) delete process.env.PI_HARK_VERBOSITY;
 			else process.env.PI_HARK_VERBOSITY = previousValues.verbosity;
+			if (previousValues.live === undefined) delete process.env.PI_HARK_LIVE_ACTIVITY;
+			else process.env.PI_HARK_LIVE_ACTIVITY = previousValues.live;
 			globalThis.fetch = previousValues.fetch;
 		}
 	});
 
 	test("alerts on tool failure only when verbosity allows errors", async () => {
 		const previousValues = {
+			enabled: process.env.PI_ACTION_NOTIFICATIONS,
 			channel: process.env.PI_ACTION_NOTIFICATIONS_CHANNEL,
 			webhook: process.env.PI_HARK_WEBHOOK_URL,
 			verbosity: process.env.PI_HARK_VERBOSITY,
 			fetch: globalThis.fetch,
 		};
 		const requests = [];
+		process.env.PI_ACTION_NOTIFICATIONS = "on";
 		process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = "hark";
 		process.env.PI_HARK_WEBHOOK_URL = "https://hark.ryan.ceo/hooks/test-token";
 		globalThis.fetch = async (url, init) => {
@@ -642,6 +664,7 @@ describe("action notifications", () => {
 
 	test("skips the finished push when an action is detected", async () => {
 		const previousValues = {
+			enabled: process.env.PI_ACTION_NOTIFICATIONS,
 			channel: process.env.PI_ACTION_NOTIFICATIONS_CHANNEL,
 			webhook: process.env.PI_HARK_WEBHOOK_URL,
 			verbosity: process.env.PI_HARK_VERBOSITY,
@@ -649,6 +672,7 @@ describe("action notifications", () => {
 			fetch: globalThis.fetch,
 		};
 		const requests = [];
+		process.env.PI_ACTION_NOTIFICATIONS = "on";
 		process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = "hark";
 		process.env.PI_HARK_WEBHOOK_URL = "https://hark.ryan.ceo/hooks/test-token";
 		process.env.PI_HARK_VERBOSITY = "all";
@@ -682,6 +706,8 @@ describe("action notifications", () => {
 			expect(requests).toHaveLength(1);
 			expect(JSON.parse(requests[0].init.body).body).toBe("Pi needs your attention: Approve the deployment.");
 		} finally {
+			if (previousValues.enabled === undefined) delete process.env.PI_ACTION_NOTIFICATIONS;
+			else process.env.PI_ACTION_NOTIFICATIONS = previousValues.enabled;
 			if (previousValues.channel === undefined) delete process.env.PI_ACTION_NOTIFICATIONS_CHANNEL;
 			else process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = previousValues.channel;
 			if (previousValues.webhook === undefined) delete process.env.PI_HARK_WEBHOOK_URL;
@@ -742,6 +768,35 @@ describe("action notifications", () => {
 		expect(handlers.has("before_agent_start")).toBe(true);
 		expect(handlers.has("message_end")).toBe(true);
 		expect(handlers.has("agent_settled")).toBe(true);
+	});
+
+	test("defaults to off and turns on from the command", async () => {
+		const previousEnabled = process.env.PI_ACTION_NOTIFICATIONS;
+		delete process.env.PI_ACTION_NOTIFICATIONS;
+		const notices = [];
+		try {
+			const handlers = new Map();
+			const commands = new Map();
+			actionNotifications({
+				on: (event, handler) => handlers.set(event, handler),
+				registerCommand: (name, command) => commands.set(name, command),
+				registerTool: () => {},
+			});
+			const ctx = { ui: { notify: (message) => notices.push(message) } };
+
+			// Default: no action-marker instruction reaches the system prompt.
+			expect(await handlers.get("before_agent_start")({ systemPrompt: "base" }, ctx)).toBeUndefined();
+
+			await commands.get("action-notifications").handler("on", ctx);
+			const injected = await handlers.get("before_agent_start")({ systemPrompt: "base" }, ctx);
+			expect(injected.systemPrompt).toContain("[[PI_ACTION_REQUIRED:");
+
+			await commands.get("action-notifications").handler("off", ctx);
+			expect(await handlers.get("before_agent_start")({ systemPrompt: "base" }, ctx)).toBeUndefined();
+		} finally {
+			if (previousEnabled === undefined) delete process.env.PI_ACTION_NOTIFICATIONS;
+			else process.env.PI_ACTION_NOTIFICATIONS = previousEnabled;
+		}
 	});
 });
 

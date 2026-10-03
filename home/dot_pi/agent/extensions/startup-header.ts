@@ -42,7 +42,8 @@ export function formatNameList(names: string[]): string {
   return `(${sorted.length}) ${visible.join(", ")} +${sorted.length - visible.length} more`;
 }
 
-/** "(n) name" per server, sorted by name, from the mcp-cache shape. Pure for testing. */
+/** "(n) name" per server, sorted by name, from the mcp-cache shape. Pure for testing.
+ * Kept for backwards-compat imports; new code builds entries from live tools. */
 export function formatMcpEntries(
   servers: Record<string, { tools?: unknown[] } | undefined> | undefined,
 ): string[] {
@@ -55,20 +56,127 @@ export function formatMcpEntries(
 export function formatMcpDisplay(
   servers: Record<string, { tools?: unknown[] } | undefined> | undefined,
 ): string {
-  return formatNameList(formatMcpEntries(servers));
+  return formatMcpEntriesDisplay(formatMcpEntries(servers));
 }
 
-// Cache-only snapshot, no live MCP status; re-read per snapshot.
-function readMcpEntries(): string[] {
-  try {
-    const raw = readFileSync(join(getAgentDir(), "mcp-cache.json"), "utf8");
-    const cache = JSON.parse(raw) as {
-      servers?: Record<string, { tools?: unknown[] }>;
-    };
-    return formatMcpEntries(cache.servers);
-  } catch {
-    return [];
+/** Join pre-sorted MCP entries preserving server-name order. Pure for testing.
+ * Unlike formatNameList (which re-sorts), MCP entries are already sorted by
+ * server name and must stay that way: re-sorting "(n) name" strings would
+ * order by count prefix instead of server name. */
+export function formatMcpEntriesDisplay(entries: string[]): string {
+  if (entries.length === 0) return "none";
+  if (entries.length <= MAX_VISIBLE_ITEMS) return `(${entries.length}) ${entries.join(", ")}`;
+  const visible = entries.slice(0, MAX_VISIBLE_ITEMS);
+  return `(${entries.length}) ${visible.join(", ")} +${entries.length - visible.length} more`;
+}
+
+/** Namespace pi registers for a server's tools: `mcp__<server>` with `-` → `_`.
+ * Mirrors pi's mcpNamespace without a deep import. Pure for testing. */
+export function mcpNamespaceForServer(server: string): string {
+  return `mcp__${server.replace(/-/g, "_")}`;
+}
+
+export interface LiveToolLike {
+  name?: string;
+  namespace?: { name?: string } | undefined;
+  exposure?: string | undefined;
+}
+
+/** Group live tools by MCP namespace. Skips non-MCP and hidden (withdrawn) tools. Pure for testing. */
+export function groupMcpToolsByNamespace(
+  tools: Array<LiveToolLike | undefined | null> | undefined | null,
+): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const t of tools ?? []) {
+    if (!t) continue;
+    if (t.exposure === "hidden") continue;
+    const ns = t.namespace?.name;
+    if (typeof ns === "string" && ns.startsWith("mcp__")) {
+      counts.set(ns, (counts.get(ns) ?? 0) + 1);
+      continue;
+    }
+    // Defensive fallback: derive namespace from mcp__<server>__<tool> names
+    // when namespace metadata is missing (should not happen for MCP tools).
+    if (typeof t.name === "string" && t.name.startsWith("mcp__")) {
+      const rest = t.name.slice("mcp__".length);
+      const sep = rest.indexOf("__");
+      if (sep > 0) {
+        const fallbackNs = `mcp__${rest.slice(0, sep)}`;
+        counts.set(fallbackNs, (counts.get(fallbackNs) ?? 0) + 1);
+      }
+    }
   }
+  return counts;
+}
+
+/** Map a namespace back to its original server name to preserve dashes. Pure for testing. */
+export function resolveMcpServerDisplayName(namespace: string, knownNames: string[] = []): string {
+  for (const n of knownNames) {
+    if (mcpNamespaceForServer(n) === namespace) return n;
+  }
+  return namespace.startsWith("mcp__") ? namespace.slice("mcp__".length) : namespace;
+}
+
+/** Build "(n) name" entries sorted by display name from live tools. Pure for testing. */
+export function buildMcpEntriesFromTools(
+  tools: Array<LiveToolLike | undefined | null> | undefined | null,
+  knownNames: string[] = [],
+): string[] {
+  const counts = groupMcpToolsByNamespace(tools);
+  return [...counts.entries()]
+    .map(([ns, count]) => ({ name: resolveMcpServerDisplayName(ns, knownNames), count }))
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(({ name, count }) => `(${count}) ${name}`);
+}
+
+/** Read only server names (keys) from global + project mcp.json. Never reads values/credentials. */
+export function readMcpConfigServerNames(agentDir: string, cwd: string): string[] {
+  const names: string[] = [];
+  const files = [join(agentDir, "mcp.json")];
+  // Project config only affects display-name recovery (inclusion is driven by
+  // live tools), so reading it without a trust check is safe: no values loaded.
+  if (cwd) files.push(join(cwd, CONFIG_DIR_NAME, "mcp.json"));
+  for (const file of files) {
+    try {
+      const parsed = JSON.parse(readFileSync(file, "utf8")) as {
+        mcpServers?: Record<string, unknown>;
+      };
+      if (parsed?.mcpServers && typeof parsed.mcpServers === "object") {
+        names.push(...Object.keys(parsed.mcpServers));
+      }
+    } catch {
+      // missing/unparsable config contributes no names
+    }
+  }
+  return names;
+}
+
+// Live MCP entries from pi.getAllTools() + original-name mapping.
+// Inclusion is driven by actually-registered tools, so stale cache entries
+// (e.g. removed servers) can never appear.
+function readLiveMcpEntries(
+  pi: Pick<ExtensionAPI, "getAllTools" | "getMcpServers">,
+  agentDir: string,
+  cwd: string,
+): string[] {
+  let tools: LiveToolLike[] = [];
+  try {
+    tools = (pi.getAllTools?.() ?? []) as LiveToolLike[];
+  } catch {
+    tools = [];
+  }
+  let known: string[] = [];
+  try {
+    known.push(...((pi.getMcpServers?.() ?? []).map((s) => s.name) as string[]));
+  } catch {
+    // older pi without getMcpServers; config names below still apply
+  }
+  try {
+    known.push(...readMcpConfigServerNames(agentDir, cwd));
+  } catch {
+    // ignore config read errors; fallback display uses namespace suffix
+  }
+  return buildMcpEntriesFromTools(tools, [...new Set(known)]);
 }
 
 /**
@@ -262,9 +370,28 @@ export default function startupHeader(pi: ExtensionAPI) {
     extensions: "none",
   };
   let requestRender: (() => void) | undefined;
+  let lastCwd = "";
+  let lastAgentDir = getAgentDir();
 
-  function snapshot(agentsPaths: string[], cwd: string, modelLabel: string): void {
-    const entries = readMcpEntries();
+  function currentMcpDisplay(): string {
+    // Recomputed live on every render so async MCP connections appear
+    // without waiting for the next snapshot event.
+    try {
+      const entries = readLiveMcpEntries(pi, lastAgentDir, lastCwd);
+      return formatMcpEntriesDisplay(entries);
+    } catch {
+      return loaded.mcps;
+    }
+  }
+
+  function snapshot(agentsPaths: string[] | undefined, cwd: string, modelLabel: string): void {
+    lastCwd = cwd || "";
+    try {
+      lastAgentDir = getAgentDir();
+    } catch {
+      // keep previous agentDir when pi has no agent dir (tests)
+    }
+    const entries = readLiveMcpEntries(pi, lastAgentDir, lastCwd);
     let toolNames: string[] = [];
     try {
       toolNames = (pi.getAllTools?.() ?? []).map((t) => t.name);
@@ -288,14 +415,19 @@ export default function startupHeader(pi: ExtensionAPI) {
       // ignore command source errors
     }
     const extNames = Array.from(new Set([...extPaths].map(extensionDisplayName))).sort();
+    const agentsDisplay =
+      agentsPaths === undefined
+        ? loaded.agents
+        : agentsPaths.length === 0
+          ? "none"
+          : agentsPaths.map((p) => displayPath(p, cwd)).join(", ");
     loaded = {
       model: modelLabel || "no-model",
       cwdDir: displayCwd(cwd),
-      mcps: entries.length > 0 ? formatNameList(entries) : "none",
+      mcps: formatMcpEntriesDisplay(entries),
       tools: formatNameList(toolNames),
       extensions: formatNameList(extNames),
-      agents:
-        agentsPaths.length === 0 ? "none" : agentsPaths.map((p) => displayPath(p, cwd)).join(", "),
+      agents: agentsDisplay,
     };
   }
 
@@ -306,21 +438,38 @@ export default function startupHeader(pi: ExtensionAPI) {
     ctx.ui.setHeader((tui, _theme) => {
       requestRender = () => tui.requestRender();
       return {
-        render: (width: number) => buildHeaderLines(_theme, width, loaded),
+        render: (width: number) =>
+          buildHeaderLines(_theme, width, { ...loaded, mcps: currentMcpDisplay() }),
         invalidate() {},
       };
     });
   });
 
+  function refreshFromSystemPrompt(
+    contextFiles: Array<{ path: string }> | undefined,
+    cwd: string,
+    modelLabel: string,
+  ): void {
+    snapshot((contextFiles ?? []).map((f) => f.path), cwd, modelLabel);
+    requestRender?.();
+  }
+
   // MCP tools register asynchronously; refresh once the system prompt is built.
   pi.on("before_agent_start", async (event, ctx) => {
     const cwd = event.systemPromptOptions?.cwd || ctx?.cwd || "";
     const modelLabel = ctx?.model ? `${ctx.model.provider}/${ctx.model.id}` : loaded.model;
-    snapshot(
-      (event.systemPromptOptions?.contextFiles ?? []).map((f) => f.path),
-      cwd,
-      modelLabel,
-    );
+    refreshFromSystemPrompt(event.systemPromptOptions?.contextFiles, cwd, modelLabel);
+  });
+
+  // MCP connections finish in the background after startup; refresh on the
+  // first turns so the header converges to the live tool set.
+  pi.on("turn_start", async (_event, ctx) => {
+    if (!lastCwd && !ctx?.cwd) return;
+    const cwd = ctx?.cwd || lastCwd;
+    const modelLabel = ctx?.model ? `${ctx.model.provider}/${ctx.model.id}` : loaded.model;
+    // turn_start carries no contextFiles: pass undefined to keep the
+    // authoritative agents display from before_agent_start.
+    snapshot(undefined, cwd, modelLabel);
     requestRender?.();
   });
 

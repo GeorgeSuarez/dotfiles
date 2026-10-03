@@ -88,7 +88,7 @@ Use the tool `signal` for network/process cancellation. Bound external output be
 - `protected-paths.ts` — Blocks protected-path writes and asks for confirmation before destructive commands. Protected paths include secrets, credentials, SSH/AWS directories, `.git`, `node_modules`, and private-key file suffixes.
 - `whimiscal.ts` — Customizes Pi's working messages.
 - `pi-workflow.ts` — `/project`, `/checkpoint`, `/checkpoints`, `/restore`, `/handoff`, `/stats`; confirms dangerous commands and protected-path edits from the LLM via the shared list in `lib/dangerous-commands.ts`.
-- `action-notifications.ts` — Detects action-required assistant messages and notifies via terminal/UI/Hark; exposes `ask_user_on_iphone`.
+- `action-notifications.ts` — Detects action-required assistant messages and notifies via terminal/UI/Hark; exposes `ask_user_on_iphone`. Disabled by default; enable with `PI_ACTION_NOTIFICATIONS=on` or `/action-notifications on`.
 - `herdr-agent-state.ts` — Herdr multiplexer integration (installed by Herdr).
 - `save-md/save-md.ts` — Saves assistant messages to Markdown files.
 - `cheap-compaction.ts` — `session_before_compact` generates summaries with `PI_COMPACTION_MODEL` (default `opencode-go/ox-alpha-free`) and falls back to default compaction on failure.

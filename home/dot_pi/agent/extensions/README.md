@@ -17,7 +17,7 @@ These extensions are auto-discovered from `~/.pi/agent/extensions/`.
 | `local-provider.ts` | Dynamic local OpenAI-compatible provider/model discovery |
 | `provider-fallback.ts` | Manual model fallback and provider error notifications |
 | `status-line.ts` | Enhanced context, token, cost, model, branch, and extension status footer |
-| `action-notifications.ts` | Detects LLM responses that require a user action and sends terminal/UI/Hark notifications; provides iPhone questions |
+| `action-notifications.ts` | Detects LLM responses that require a user action and sends terminal/UI/Hark notifications; provides iPhone questions (disabled by default; enable with `/action-notifications on`) |
 | `cheap-compaction.ts` | Routes auto-compaction summaries to a cheap model (`PI_COMPACTION_MODEL`, default `opencode-go/ox-alpha-free`) instead of the active conversation model |
 | `context-pruner.ts` | Replaces oversized old tool results with one-line placeholders before each LLM call; keeps the last `PI_PRUNER_KEEP_TURNS` user turns intact |
 | `user-bash-guard.ts` | Applies the shared dangerous-command list to user `!`/`!!` shell commands with confirmation |
@@ -59,8 +59,8 @@ PI_CI_WATCH_INTERVAL=60     # default poll interval in seconds
 # Manual model fallback targets, in priority order
 PI_PROVIDER_FALLBACKS=ollama/qwen2.5-coder,opencode-go/gpt-5.6-luna
 
-# LLM action-required notifications (enabled by default; set off to disable)
-PI_ACTION_NOTIFICATIONS=off
+# LLM action-required notifications (disabled by default; set on to enable)
+PI_ACTION_NOTIFICATIONS=on
 PI_ACTION_NOTIFICATIONS_CHANNEL=terminal # terminal, ui, both, hark, or all
 PI_HARK_VERBOSITY=actions             # optional: errors (actions + failures), all (also starts + finishes)
 PI_HARK_DONE_SUMMARY=off              # optional: disable the done-with-summary Hark push (on by default)
