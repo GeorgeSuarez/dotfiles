@@ -87,9 +87,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/mattpocock/skills.git",
       "skillPath": "skills/productivity/handoff/SKILL.md",
-      "skillFolderHash": "2242e8f05424b8c2ae94194a90d97b88d16108ec",
+      "skillFolderHash": "ce24892bd2d4b9e7fd5ac9b95c03175e18bef388",
       "installedAt": "2026-07-31T11:53:55.636Z",
-      "updatedAt": "2026-08-21T11:00:54.012Z"
+      "updatedAt": "2026-10-07T03:10:31.989Z"
     },
     "research": {
       "source": "mattpocock/skills",
@@ -134,9 +134,9 @@
       "sourceUrl": "https://github.com/trycua/cua.git",
       "ref": "main",
       "skillPath": "libs/cua-driver/rust/Skills/cua-driver/SKILL.md",
-      "skillFolderHash": "52c28bee3fedcca43734ec008a523403a8f2e8bd",
+      "skillFolderHash": "094b1f690624bc561f6b0270f15e318aae603675",
       "installedAt": "2026-09-10T02:29:16.149Z",
-      "updatedAt": "2026-10-02T22:50:14.787Z"
+      "updatedAt": "2026-10-07T03:10:52.984Z"
     },
     "show-me": {
       "source": "humanlayer/skills",
