@@ -33,9 +33,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/mattpocock/skills.git",
       "skillPath": "skills/engineering/tdd/SKILL.md",
-      "skillFolderHash": "bf1bf5ffcd63aa8abce830f2955a853c121fb463",
+      "skillFolderHash": "667dbdd00c09d0e2189e082986e6a4d61a67c2a6",
       "installedAt": "2026-07-31T11:53:55.629Z",
-      "updatedAt": "2026-10-02T22:49:46.784Z"
+      "updatedAt": "2026-10-07T21:21:01.684Z"
     },
     "prototype": {
       "source": "mattpocock/skills",
@@ -60,18 +60,18 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/mattpocock/skills.git",
       "skillPath": "skills/engineering/diagnosing-bugs/SKILL.md",
-      "skillFolderHash": "de4236cf34757c4e9ea7afe78d46c023213ff254",
+      "skillFolderHash": "5fdd6cc53385395441910b026c72d71768e993d4",
       "installedAt": "2026-07-31T11:53:55.633Z",
-      "updatedAt": "2026-10-02T22:49:48.854Z"
+      "updatedAt": "2026-10-07T21:21:03.153Z"
     },
     "grilling": {
       "source": "mattpocock/skills",
       "sourceType": "github",
       "sourceUrl": "https://github.com/mattpocock/skills.git",
       "skillPath": "skills/productivity/grilling/SKILL.md",
-      "skillFolderHash": "f0732035b8b1b60ae39454e4191caef32fa91903",
+      "skillFolderHash": "28aceb4c9567b985cb47f7db88cf23c9f33af8b8",
       "installedAt": "2026-07-31T11:53:55.635Z",
-      "updatedAt": "2026-08-21T11:00:52.089Z"
+      "updatedAt": "2026-10-07T21:21:04.469Z"
     },
     "grill-with-docs": {
       "source": "mattpocock/skills",
@@ -134,9 +134,9 @@
       "sourceUrl": "https://github.com/trycua/cua.git",
       "ref": "main",
       "skillPath": "libs/cua-driver/rust/Skills/cua-driver/SKILL.md",
-      "skillFolderHash": "094b1f690624bc561f6b0270f15e318aae603675",
+      "skillFolderHash": "c44f6842d771337b7990063e744bbcbbda6163ef",
       "installedAt": "2026-09-10T02:29:16.149Z",
-      "updatedAt": "2026-10-07T03:10:52.984Z"
+      "updatedAt": "2026-10-12T22:15:11.871Z"
     },
     "show-me": {
       "source": "humanlayer/skills",
