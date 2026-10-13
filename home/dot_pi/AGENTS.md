@@ -1,65 +1,22 @@
 # AGENTS.md
 
-## Repository summary
+## Scope and paths
 
-This directory is a personal Pi coding-agent configuration, not a conventional application repository. It is an ESM Node/Bun package named `.pi` and currently has no Git repository metadata (`.git/`, remote, or branch). There is no existing `CLAUDE.md`, `CONTEXT.md`, `CONTEXT-MAP.md`, `docs/`, `.scratch/`, or issue-tracker configuration.
+The installed Pi configuration lives under `~/.pi/agent/`. In this dotfiles repository, its chezmoi source is `home/dot_pi/`; that directory is a subdirectory of the dotfiles Git checkout, not a separate repository. Use the `dotrepo` shell function to reach the Git root. Pi auto-discovers TypeScript extensions from `~/.pi/agent/extensions/`.
 
-The configuration is intended to be loaded from Pi's global agent directory:
+`home/dot_pi/package.json` is the source of truth for package dependencies and scripts. `agent/settings.json` is the repo-managed baseline, while the installed `~/.pi/agent/settings.json` may contain local edits. Check `chezmoi status` and `chezmoi diff` before assuming source and installed configuration match or applying either side.
 
-```text
-~/.pi/agent/
-```
+## Sensitive and runtime state
 
-Pi auto-discovers TypeScript extensions from `~/.pi/agent/extensions/`. The local `agent/` directory is that global configuration directory for this setup.
+Live `~/.pi/agent/` can contain machine-local or runtime-generated files. Treat `auth.json`, `mcp-auth.json`, `mcp.json`, `cloak.json`, `models-store.json`, sessions, caches, and logs as potentially sensitive. Avoid broad reads and never expose credentials, session contents, or tokens unless the user requests a narrowly scoped operation.
 
-## Important directories and files
-
-```text
-agent/
-├── extensions/       Pi extensions and extension README
-├── prompts/          Prompt templates exposed as /commands
-├── keybindings.json  Session/editor keybinding overrides
-├── settings.json     Pi defaults and installed package configuration
-├── auth.json         Sensitive authentication data; do not read or modify casually
-├── cloak.json        Sensitive/package-specific configuration; treat as protected
-├── models-store.json Model catalog state
-└── sessions/         Conversation history; avoid broad reads because it may contain sensitive data
-
-research/             Research notes with source citations
-tests/                Bun test files
-package.json          Package scripts and Pi dependencies
-package-lock.json     npm lockfile
-tsconfig.json         Strict no-emit TypeScript configuration
-```
-
-Do not inspect or expose authentication files, session history, API keys, or other secret-bearing state unless the user explicitly requests a narrowly scoped operation.
-
-## Runtime configuration
-
-`agent/settings.json` currently configures:
-
-- Dark theme
-- `opencode-go` as the default provider
-- `glm-5.3-flash` as the default model with `max` default thinking level
-- `enabledModels` for Ctrl+P cycling across `opencode-go` models
-- `thinkingBudgets` per thinking level and provider-level retry caps (`retry.provider`)
-- `shellCommandPrefix` that exposes the user's zsh aliases to the bash tool
-- Packages: `npm:@nicknisi/pi-cloak`, `npm:@plannotator/pi-extension`, `git:github.com/DietrichGebert/ponytail`, `npm:@ff-labs/pi-fff`
-- Regular TUI mode
-- No explicit extension paths; extensions are discovered from the global extension directory
-
-The package is private and uses these main dependencies:
-
-- `@earendil-works/pi-ai`
-- `@earendil-works/pi-coding-agent`
-- `@earendil-works/pi-tui`
-- `typebox`
+The live extension directory may include runtime-installed modules absent from `home/dot_pi/agent/extensions/`. Check the source tree before assuming a feature or command is tracked or portable to another machine.
 
 ## Extension architecture
 
-Each extension is a TypeScript module with a default factory receiving `ExtensionAPI`. Extensions use Pi's `registerTool`, `registerCommand`, `registerShortcut`, `registerProvider`, `setActiveTools`, session events, tool-call hooks, and TUI APIs.
+Each extension is a TypeScript module with a default factory receiving `ExtensionAPI`. Extensions can use Pi's `registerTool`, `registerCommand`, `registerShortcut`, `registerProvider`, session events, tool-call hooks, and TUI APIs.
 
-Use TypeBox schemas for custom tool parameters. Use `StringEnum` from `@earendil-works/pi-ai` for string enums to preserve provider compatibility. Custom tools should return:
+Use TypeBox schemas for custom tool parameters and `StringEnum` from `@earendil-works/pi-ai` for string enums. Custom tools should return:
 
 ```ts
 {
@@ -68,89 +25,20 @@ Use TypeBox schemas for custom tool parameters. Use `StringEnum` from `@earendil
 }
 ```
 
-Use the tool `signal` for network/process cancellation. Bound external output before returning it to the model. Preserve credentials out of tool content, details, logs, and status lines.
+Use the tool `signal` for network/process cancellation. Bound external output before returning it to the model. Keep credentials out of tool content, details, logs, and status lines.
 
-### Current extensions
+Use `agent/extensions/README.md` as the source of truth for repo-managed extension filenames, capabilities, commands, and environment variables. The currently tracked tools are `browser`, `websearch`, and `webfetch`; tracked slash commands include `/save-md`, `/status-line`, `/watch`, and `/unwatch`. Runtime-installed extensions or npm packages may add more.
 
-- `websearch.ts` — OpenCode-compatible Exa/Parallel MCP web search. Exa is the default; supports SSE/JSON responses, bounded response size, timeout, and search controls.
-- `webfetch.ts` — Fetches HTTP(S) URLs, converts HTML to readable text, and bounds output.
-- `browser.ts` — Delegates browser interaction to `agent-browser`; supports navigation, snapshots, reads, clicks, fills, key presses, screenshots, and URL inspection. Use `PI_BROWSER_ALLOWED_DOMAINS` for browser-level domain containment.
-- `plan-mode.ts` — `/plan [on|off]` and `Ctrl+Alt+P`; removes editing, browser, GitHub, and mutating shell capabilities while active and persists mode state in the session.
-- `git-checkpoint.ts` — Creates Git stash-object checkpoints at turn start and exposes `/checkpoint`, `/checkpoints`, and `/rollback`. It can restore a checkpoint before forking. It does not make commits and may not capture untracked files.
-- `test-runner.ts` — `run_tests` tool and `/test [target]`; detects npm, pnpm, Yarn, Bun, Cargo, and Go test/check commands.
-- `github.ts` — Read-only GitHub issue, pull request, and CI inspection through the `gh` CLI.
-- `dynamic-tools.ts` — `search_tools` and `/tools`; lazily activates `webfetch`, `browser`, `run_tests`, and `github` by default. Override with `PI_LAZY_TOOLS`.
-- `local-provider.ts` — Registers an OpenAI-compatible local provider when `PI_LOCAL_PROVIDER_URL` is set and discovers models from `/models`.
-- `provider-fallback.ts` — `/fallback` switches to the next configured `provider/model` target from `PI_PROVIDER_FALLBACKS`; provider 429/5xx responses produce a warning.
-- `status-line.ts` — Replaces the default footer with an adaptive branch/context/token/cost/model/status footer. Toggle with `/status-line`; disable at startup with `PI_STATUS_LINE=off`.
-- `skill-toggler.ts` — `/skills` opens a centered overlay with one radio-style toggle per skill. Changes are staged until Enter, persisted in session state, and reflected in the automatic system-prompt skill catalogue.
-- `git-interceptor.ts` — Prevents `git --no-verify` and prefixes Git commands with non-interactive editor settings.
-- `protected-paths.ts` — Blocks protected-path writes and asks for confirmation before destructive commands. Protected paths include secrets, credentials, SSH/AWS directories, `.git`, `node_modules`, and private-key file suffixes.
-- `whimiscal.ts` — Customizes Pi's working messages.
-- `pi-workflow.ts` — `/project`, `/checkpoint`, `/checkpoints`, `/restore`, `/handoff`, `/stats`; confirms dangerous commands and protected-path edits from the LLM via the shared list in `lib/dangerous-commands.ts`.
-- `action-notifications.ts` — Detects action-required assistant messages and notifies via terminal/UI/Hark; exposes `ask_user_on_iphone`. Disabled by default; enable with `PI_ACTION_NOTIFICATIONS=on` or `/action-notifications on`.
-- `herdr-agent-state.ts` — Herdr multiplexer integration (installed by Herdr).
-- `save-md/save-md.ts` — Saves assistant messages to Markdown files.
-- `cheap-compaction.ts` — `session_before_compact` generates summaries with `PI_COMPACTION_MODEL` (default `opencode-go/ox-alpha-free`) and falls back to default compaction on failure.
-- `context-pruner.ts` — `context` event replaces oversized old `toolResult` content with placeholders; errors and recent turns are never pruned.
-- `user-bash-guard.ts` — `user_bash` event confirms or blocks the user's own `!`/`!!` commands against the shared dangerous-command list.
-- `session-namer.ts` — Names the session from the first non-command user message via `pi.setSessionName`.
-- `issue-autocomplete.ts` — `#` autocomplete of open GitHub issues, adapted from pi's example.
-- `ci-watcher.ts` — `/watch [branch|pr] [seconds]` polls `gh run list` and injects the conclusion via `sendMessage` with `triggerTurn` when the run completes; `/unwatch` stops it.
-- `presets.ts` — `/preset save|list|off` and `/preset <name>` apply saved model/thinking/tools combinations, persisted in session entries.
+## Package checks and tests
 
-## Useful commands
-
-```text
-/skills               Configure automatic skill invocation
-/plan [on|off]        Toggle read-only plan mode
-/checkpoint           Create a Git checkpoint
-/checkpoints          List checkpoints
-/rollback             Restore the latest checkpoint
-/test [target]        Run repository tests/checks
-/github issue ...     Inspect GitHub issues
-/github pr ...        Inspect pull requests
-/github checks ...    Inspect CI checks
-/tools                List or activate tools
-/providers            Show local provider configuration
-/fallback             Switch to a configured fallback model
-/status-line          Toggle the enhanced footer
-/watch [ref]          Watch GitHub Actions for a branch or PR
-/unwatch              Stop watching CI
-/preset [name|save|list|off]  Switch model/thinking/tools presets
-```
-
-## Environment configuration
-
-Relevant optional variables are documented in `agent/extensions/README.md`. Important groups include:
-
-```text
-EXA_API_KEY
-OPENCODE_WEBSEARCH_PROVIDER
-PARALLEL_API_KEY
-PI_BROWSER_SESSION
-PI_BROWSER_ALLOWED_DOMAINS
-PI_LAZY_TOOLS
-PI_LOCAL_PROVIDER_URL
-PI_LOCAL_PROVIDER_API_KEY
-PI_LOCAL_PROVIDER_NAME
-PI_LOCAL_MODELS
-PI_PROVIDER_FALLBACKS
-PI_STATUS_LINE
-```
-
-Never commit literal credentials to source, documentation, test fixtures, or session metadata. Prefer environment variables or Pi's credential mechanisms.
-
-## Testing and validation
-
-Run these commands after changes:
+From the Pi package root, run these checks after dependencies are installed (`npm ci` if `node_modules` is absent):
 
 ```bash
 npm run typecheck
 npm test
 ```
 
-`npm run typecheck` runs strict no-emit TypeScript checking. `npm test` runs Bun tests from `tests/*.test.mjs`. Tests import the TypeScript extension modules directly and currently cover web-search MCP parsing/request behavior and HTML-to-text extraction.
+`npm run typecheck` runs strict no-emit TypeScript checking. `npm test` runs Bun tests from `tests/*.test.mjs`, covering web search/fetch, startup-header behavior, and extension features. `tests/feature-extensions.test.mjs` imports `agent/extensions/hark/index.ts`, which is present in the live extension directory but absent from tracked source; reconcile that runtime-only dependency before expecting the full suite to pass from a clean checkout.
 
 When adding tests:
 
@@ -173,10 +61,6 @@ When adding tests:
 - For file-mutating custom tools, use Pi's file mutation queue and resolve paths before queuing.
 - Keep extension state in session entries or tool `details` when it must survive branching or reloads.
 
-## Research notes
+## Repository-specific workflow
 
-`research/opencode-web-search.md` documents the OpenCode web-search implementation and its Exa/Parallel MCP protocol with primary-source citations. Preserve source URLs when extending web research behavior.
-
-## Repository status and domain documentation
-
-This folder currently has no Git remote, external issue tracker declaration, domain model, ADR directory, or `docs/agents/` setup. Do not invent a GitHub/GitLab workflow for this configuration unless the user explicitly chooses one. If domain documentation becomes necessary, add it deliberately under `docs/` and document the consumer rules here.
+`home/dot_pi/` is part of the enclosing dotfiles repository. Use `dotrepo` before Git operations that need the repository root; do not treat the installed `~/.pi/agent/` directory as a Git checkout. This Pi subtree has no separate issue-tracker or domain-documentation workflow; add such documentation deliberately if needed.

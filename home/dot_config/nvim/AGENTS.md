@@ -22,7 +22,7 @@ Since this is a Neovim configuration (not a traditional project), there are no b
 
 ### Lua Style
 
-- **Indentation**: 4 spaces (soft tabs) — enforced globally via `stylua.toml`
+- **Indentation**: 2 spaces by default; the Go ftplugin uses tabs at a 4-column width. Lua files use 4-space indentation from `stylua.toml`.
 - **Quotes**: Double quotes for strings
 - **Line endings**: Unix-style (LF)
 - **Trailing whitespace**: Trim trailing whitespace
@@ -42,7 +42,7 @@ Since this is a Neovim configuration (not a traditional project), there are no b
 
 ### Keymaps
 
-- Set leader key at top: `vim.g.mapleader = " "`
+- Leader is space, set in `lua/georsuar/core/keymaps.lua`.
 - Use `vim.keymap.set()` API
 - Always provide descriptions: `{ desc = "Description here" }`
 - Use `<cmd>` for command mode mappings
@@ -74,14 +74,14 @@ Since this is a Neovim configuration (not a traditional project), there are no b
 
 - Use `vim.lsp.enable()` for enabling language servers
 - Create autocmd groups for LSP attach: `vim.api.nvim_create_augroup("UserLspConfig", {})`
-- Set capabilities from cmp-nvim-lsp for autocompletion
+- Set LSP capabilities from `blink.cmp` for autocompletion.
 - Define diagnostic signs with Nerd Font icons
 
 ### Formatting Integration
 
 - Uses conform.nvim for formatting
 - Format on save enabled with 5000ms timeout
-- Formatters: oxfmt (web), stylua (lua), black/isort (python), clang-format (c/cpp), gofmt (go)
+- Formatters: oxfmt (JavaScript/TypeScript, Svelte, CSS, HTML, JSON, YAML, Markdown, GraphQL), stylua (Lua), isort/black (Python), clang-format (C/C++), gofmt (Go), csharpier (C#).
 
 ### Linting Integration
 
@@ -102,7 +102,5 @@ Since this is a Neovim configuration (not a traditional project), there are no b
 
 - This config uses lazy.nvim for plugin management (lazy-lock.json tracks versions)
 - Uses plenary.nvim as a dependency for many plugins
-- Leader key is set to space (`<leader>` = space)
 - Uses termguicolors for true color support
-- Clipboard is set to use system clipboard (`unnamedplus`)
-- Tab width is 4 spaces everywhere (editor and Lua source)
+- System clipboard (`unnamedplus`) is enabled on local sessions and intentionally disabled over SSH because remote clipboard providers can hang.
