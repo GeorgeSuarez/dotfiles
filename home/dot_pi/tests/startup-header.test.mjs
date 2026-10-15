@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { stripTerminalSequences } from "@earendil-works/pi-tui";
+import { stripTerminalSequences, visibleWidth } from "@earendil-works/pi-tui";
 import startupHeader, {
   buildHeaderLines,
   buildMcpEntriesFromTools,
@@ -12,6 +12,7 @@ import startupHeader, {
   formatMcpEntries,
   formatMcpEntriesDisplay,
   formatNameList,
+  getPiLogoRows,
   groupMcpToolsByNamespace,
   mcpNamespaceForServer,
   readMcpConfigServerNames,
@@ -20,7 +21,7 @@ import startupHeader, {
 } from "../agent/extensions/startup-header.ts";
 import { VERSION } from "@earendil-works/pi-coding-agent";
 
-const theme = { fg: (_c, s) => s, bold: (s) => s };
+const theme = { fg: (_c, s) => s, bold: (s) => s, getColorMode: () => "truecolor" };
 const loaded = {
   model: "opencode-go/muse-spark",
   cwdDir: "~/proj",
@@ -82,6 +83,31 @@ describe("startup header table", () => {
     const lines = buildHeaderLines(theme, 40, loaded).map((l) => stripTerminalSequences(l));
     for (const line of lines) expect([...line].length).toBeLessThanOrEqual(40);
     expect(lines.some((l) => l.includes("maestro"))).toBe(true);
+  });
+
+  test("renders the colored brand logo as half-block pixel rows", () => {
+    const rows = getPiLogoRows("truecolor");
+    expect(rows).toHaveLength(8);
+    expect(rows.every((r) => visibleWidth(r) === 16)).toBe(true);
+    expect(rows.map((r) => stripTerminalSequences(r))).toEqual([
+      "████████████    ",
+      "████████████    ",
+      "████    ████    ",
+      "████    ████    ",
+      "████████    ████",
+      "████████    ████",
+      "████        ████",
+      "████        ████",
+    ]);
+    // Pi brand colors, theme-independent: coral, blue, yellow.
+    expect(rows[0]).toContain("\x1b[38;2;228;138;122m");
+    expect(rows[2]).toContain("\x1b[38;2;79;142;179m");
+    expect(rows[4]).toContain("\x1b[38;2;234;182;93m");
+    // 256-color terminals get cube indexes instead of RGB triples.
+    const ansi256 = getPiLogoRows("256color");
+    expect(ansi256[0]).not.toContain("38;2;");
+    expect(ansi256[0]).toContain("\x1b[38;5;174m");
+    for (const row of ansi256) expect(visibleWidth(row)).toBe(16);
   });
 
   test("formats mcp cache servers sorted with tool counts", () => {

@@ -8,10 +8,10 @@ import {
   getAgentDir,
   loadProjectContextFiles,
 } from "@earendil-works/pi-coding-agent";
-import { truncateToWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
+import { truncateToWidth, visibleWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
 
 /**
- * Startup header as a table with the official Pi logo (pi.dev/logo-auto.svg)
+ * Startup header as a table with the colored Pi logo (pi.dev/logo-auto.svg)
  * in its own column and version, model, cwd, AGENTS.md, MCP servers, tools,
  * and extensions alongside it.
  * Pair with `quietStartup: true`, which hides the built-in header plus the
@@ -19,15 +19,101 @@ import { truncateToWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
  * `pi --verbose` still forces full output.
  */
 
-// Official Pi mark: blocky "P" + "i" bar, traced from the SVG geometry.
-// 4x4 stroke-unit grid (1 unit = ~117px in the 800x800 viewBox):
-//   top bar / bowl / mid connector / stems. Each unit renders as 4 cells
-// wide; each row is doubled so terminal cells stay roughly square.
-function getPiLogoRows(): string[] {
-  const B = "█".repeat(4);
-  const S = " ".repeat(4);
-  const rows = [B + B + B, B + S + B, B + B + S + B, B + S + S + B];
-  return rows.flatMap((row) => [row, row]);
+/** Pi brand colors, matching the built-in header logo; fixed across themes. */
+const PI_LOGO_COLORS: Record<string, readonly [number, number, number]> = {
+  S: [228, 138, 122], // coral: top bar + bowl
+  B: [79, 142, 179], // blue: stem + mid connector
+  Y: [234, 182, 93], // yellow: i bar
+};
+
+/**
+ * The mark as a 16x16 pixel grid, one character per pixel, "." transparent.
+ * Geometry is the official 4x4 stroke grid (top bar / bowl / connector /
+ * stems) at 4 pixels per stroke unit. Pure for testing.
+ */
+const PI_LOGO_GRID: readonly string[] = [
+  "SSSSSSSSSSSS....",
+  "SSSSSSSSSSSS....",
+  "SSSSSSSSSSSS....",
+  "SSSSSSSSSSSS....",
+  "BBBB....SSSS....",
+  "BBBB....SSSS....",
+  "BBBB....SSSS....",
+  "BBBB....SSSS....",
+  "BBBBBBBB....YYYY",
+  "BBBBBBBB....YYYY",
+  "BBBBBBBB....YYYY",
+  "BBBBBBBB....YYYY",
+  "BBBB........YYYY",
+  "BBBB........YYYY",
+  "BBBB........YYYY",
+  "BBBB........YYYY",
+];
+
+/** Terminal color modes pi themes report; mirrors pi-tui's TerminalColorMode. */
+export type LogoColorMode = "truecolor" | "256color";
+
+const LOGO_RESET = "\x1b[0m";
+/** xterm 6x6x6 cube levels used for the 256-color fallback. */
+const ANSI_CUBE = [0, 95, 135, 175, 215, 255];
+
+function nearestCubeIndex(value: number): number {
+  let closest = 0;
+  for (let i = 1; i < ANSI_CUBE.length; i++) {
+    if (Math.abs(ANSI_CUBE[i] - value) < Math.abs(ANSI_CUBE[closest] - value)) closest = i;
+  }
+  return closest;
+}
+
+/** 6x6x6 cube index; the brand colors are far from the gray ramp. */
+function rgbToAnsi256([r, g, b]: readonly [number, number, number]): number {
+  return 16 + 36 * nearestCubeIndex(r) + 6 * nearestCubeIndex(g) + nearestCubeIndex(b);
+}
+
+function logoColor(symbol: string | undefined): readonly [number, number, number] | undefined {
+  return symbol === undefined ? undefined : PI_LOGO_COLORS[symbol];
+}
+
+function logoFg(color: readonly [number, number, number], mode: LogoColorMode): string {
+  const [r, g, b] = color;
+  return mode === "truecolor" ? `\x1b[38;2;${r};${g};${b}m` : `\x1b[38;5;${rgbToAnsi256(color)}m`;
+}
+
+function logoBg(color: readonly [number, number, number], mode: LogoColorMode): string {
+  const [r, g, b] = color;
+  return mode === "truecolor" ? `\x1b[48;2;${r};${g};${b}m` : `\x1b[48;5;${rgbToAnsi256(color)}m`;
+}
+
+/**
+ * Logo column rows: each terminal cell stacks two grid pixels, so 16 pixel
+ * rows render as 8 terminal rows of 16 columns. Pure for testing.
+ */
+export function getPiLogoRows(mode: LogoColorMode = "truecolor"): string[] {
+  const rows: string[] = [];
+  for (let y = 0; y < PI_LOGO_GRID.length; y += 2) {
+    const top = PI_LOGO_GRID[y] ?? "";
+    const bottom = PI_LOGO_GRID[y + 1] ?? "";
+    let line = "";
+    for (let x = 0; x < Math.max(top.length, bottom.length); x++) {
+      const upper = logoColor(top[x]);
+      const lower = logoColor(bottom[x]);
+      if (upper && lower) {
+        // Row pairs are equal in the current grid, so usually a full block.
+        line +=
+          top[x] === bottom[x]
+            ? logoFg(upper, mode) + "█" + LOGO_RESET
+            : logoFg(upper, mode) + logoBg(lower, mode) + "▀" + LOGO_RESET;
+      } else if (upper) {
+        line += logoFg(upper, mode) + "▀" + LOGO_RESET;
+      } else if (lower) {
+        line += logoFg(lower, mode) + "▄" + LOGO_RESET;
+      } else {
+        line += " ";
+      }
+    }
+    rows.push(line);
+  }
+  return rows;
 }
 
 /** Cap long lists so the header stays a fixed height. Pure for testing. */
@@ -291,13 +377,16 @@ export const TOKYO_NIGHT = {
 } as const;
 
 function buildTable(theme: Theme, width: number, loaded: LoadedInfo): string[] {
-  const logoRows = getPiLogoRows();
-  const logoWidth = Math.max(...logoRows.map((r) => r.length));
+  const logoRows = getPiLogoRows(theme.getColorMode?.() ?? "truecolor");
+  const logoWidth = Math.max(...logoRows.map((r) => visibleWidth(r)));
   const valueWidth = Math.max(width - logoWidth - 7, 8);
   const border = (s: string) => theme.fg("borderMuted", s);
-  // Left-aligned: the P stem runs down grid column 0 in every row, so any
-  // left padding on the shorter rows would jog the stem and break the P.
-  const fitLogo = (s: string) => theme.fg("text", truncateToWidth(s, logoWidth).padEnd(logoWidth));
+  // Logo rows carry their own ANSI colors, so only truncate and pad here;
+  // wrapping them in a theme color would leak into the brand mark.
+  const fitLogo = (s: string) => {
+    const clipped = truncateToWidth(s, logoWidth);
+    return clipped + " ".repeat(Math.max(0, logoWidth - visibleWidth(clipped)));
+  };
   const dim = (s: string) => theme.fg("dim", s);
   const entries: Array<{ text: string; color: (s: string) => string }> = [
     { text: `Version: ${VERSION}`, color: (s) => theme.bold(theme.fg("accent", s)) },
