@@ -9,7 +9,7 @@ node_modules/
 home/dot_pi/agent/private_auth.json
 home/dot_pi/agent/private_models-store.json
 home/dot_pi/agent/sessions/
-home/dot_pi/research/*
+home/dot_pi/agent/settings.json
 
 # Runtime state / secrets — never `chezmoi add` + commit these
 # (live-only today; listed here so an accidental add stays untracked)
