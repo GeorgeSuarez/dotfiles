@@ -134,9 +134,9 @@
       "sourceUrl": "https://github.com/trycua/cua.git",
       "ref": "main",
       "skillPath": "libs/cua-driver/rust/Skills/cua-driver/SKILL.md",
-      "skillFolderHash": "1e72cd6e93797ea7245f489e5731adee521de819",
+      "skillFolderHash": "a789e14e047025a12fcdc2c919068dec459a52ff",
       "installedAt": "2026-09-10T02:29:16.149Z",
-      "updatedAt": "2026-10-14T23:28:43.746Z"
+      "updatedAt": "2026-10-19T21:47:14.713Z"
     },
     "show-me": {
       "source": "humanlayer/skills",
