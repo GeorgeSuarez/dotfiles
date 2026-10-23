@@ -134,9 +134,9 @@
       "sourceUrl": "https://github.com/trycua/cua.git",
       "ref": "main",
       "skillPath": "libs/cua-driver/rust/Skills/cua-driver/SKILL.md",
-      "skillFolderHash": "a789e14e047025a12fcdc2c919068dec459a52ff",
+      "skillFolderHash": "602a1687ef8a46e0787be9e36fed386588e84bba",
       "installedAt": "2026-09-10T02:29:16.149Z",
-      "updatedAt": "2026-10-19T21:47:14.713Z"
+      "updatedAt": "2026-10-21T23:27:09.058Z"
     },
     "show-me": {
       "source": "humanlayer/skills",
@@ -146,6 +146,70 @@
       "skillFolderHash": "362200ac2fb3c17b765049444e88de73767e6d08",
       "installedAt": "2026-09-18T01:12:43.834Z",
       "updatedAt": "2026-09-18T01:12:43.834Z"
+    },
+    "find-animation-opportunities": {
+      "source": "emilkowalski/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/emilkowalski/skills.git",
+      "skillPath": "skills/find-animation-opportunities/SKILL.md",
+      "skillFolderHash": "e6443880f38e33cf78e5d678471eed35e8566763",
+      "installedAt": "2026-10-23T02:29:12.086Z",
+      "updatedAt": "2026-10-23T02:29:12.086Z"
+    },
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/anthropics/skills.git",
+      "skillPath": "skills/frontend-design/SKILL.md",
+      "skillFolderHash": "d79e2a5bb4df4a386c2adcdd9ab8709bba28c3f6",
+      "pluginName": "example-skills",
+      "installedAt": "2026-10-23T03:25:26.691Z",
+      "updatedAt": "2026-10-23T03:25:26.691Z"
+    },
+    "emil-design-eng": {
+      "source": "emilkowalski/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/emilkowalski/skills.git",
+      "skillPath": "skills/emil-design-eng/SKILL.md",
+      "skillFolderHash": "db7a20dc1d8ad26a0307dcb45ebc79fc372f5c69",
+      "installedAt": "2026-10-23T03:25:28.237Z",
+      "updatedAt": "2026-10-23T03:25:28.237Z"
+    },
+    "better-ui": {
+      "source": "jakubkrehel/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/jakubkrehel/skills.git",
+      "skillPath": "skills/better-ui/SKILL.md",
+      "skillFolderHash": "b938dbf6c6a50895f092211012546a31fc5e887e",
+      "installedAt": "2026-10-23T03:25:30.028Z",
+      "updatedAt": "2026-10-23T03:25:30.028Z"
+    },
+    "better-typography": {
+      "source": "jakubkrehel/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/jakubkrehel/skills.git",
+      "skillPath": "skills/better-typography/SKILL.md",
+      "skillFolderHash": "25751e782efef061becc8922bb31e378d57fc7b8",
+      "installedAt": "2026-10-23T03:25:31.608Z",
+      "updatedAt": "2026-10-23T03:25:31.608Z"
+    },
+    "better-colors": {
+      "source": "jakubkrehel/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/jakubkrehel/skills.git",
+      "skillPath": "skills/better-colors/SKILL.md",
+      "skillFolderHash": "1f96b150ca7f25fd63ba6079a2ceaf75849186f5",
+      "installedAt": "2026-10-23T03:25:33.361Z",
+      "updatedAt": "2026-10-23T03:25:33.361Z"
+    },
+    "better-layout": {
+      "source": "jakubkrehel/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/jakubkrehel/skills.git",
+      "skillPath": "skills/better-layout/SKILL.md",
+      "skillFolderHash": "7ffa8ef65b63bd160eef9d32d1a4493d98260d0f",
+      "installedAt": "2026-10-23T03:25:35.111Z",
+      "updatedAt": "2026-10-23T03:25:35.111Z"
     }
   },
   "dismissed": {

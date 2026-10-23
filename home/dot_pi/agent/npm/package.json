@@ -3,11 +3,11 @@
   "private": true,
   "dependencies": {
     "@ff-labs/pi-fff": "^0.11.0",
-    "@juicesharp/rpiv-ask-user-question": "^2.13.9",
-    "@narumitw/pi-btw": "^0.61.2",
-    "@narumitw/pi-usage": "^0.67.0",
-    "@nicknisi/pi-cloak": "^0.1.2",
-    "@plannotator/pi-extension": "^0.28.23",
+    "@juicesharp/rpiv-ask-user-question": "^2.14.1",
+    "@narumitw/pi-btw": "^0.62.0",
+    "@narumitw/pi-usage": "^0.68.0",
+    "@nicknisi/pi-cloak": "^0.2.0",
+    "@plannotator/pi-extension": "^0.28.29",
     "pi-lens": "^4.4.4"
   },
   "allowScripts": {
