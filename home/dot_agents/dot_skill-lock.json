@@ -134,9 +134,9 @@
       "sourceUrl": "https://github.com/trycua/cua.git",
       "ref": "main",
       "skillPath": "libs/cua-driver/rust/Skills/cua-driver/SKILL.md",
-      "skillFolderHash": "602a1687ef8a46e0787be9e36fed386588e84bba",
+      "skillFolderHash": "12db5f6136364f5748e8768cf1fc7ba2e84ecaa8",
       "installedAt": "2026-09-10T02:29:16.149Z",
-      "updatedAt": "2026-10-21T23:27:09.058Z"
+      "updatedAt": "2026-10-26T22:13:25.710Z"
     },
     "show-me": {
       "source": "humanlayer/skills",
@@ -180,36 +180,36 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/jakubkrehel/skills.git",
       "skillPath": "skills/better-ui/SKILL.md",
-      "skillFolderHash": "b938dbf6c6a50895f092211012546a31fc5e887e",
+      "skillFolderHash": "6067ef3ae11c7f467cf32016741dd2591a6325f5",
       "installedAt": "2026-10-23T03:25:30.028Z",
-      "updatedAt": "2026-10-23T03:25:30.028Z"
+      "updatedAt": "2026-10-26T22:13:28.550Z"
     },
     "better-typography": {
       "source": "jakubkrehel/skills",
       "sourceType": "github",
       "sourceUrl": "https://github.com/jakubkrehel/skills.git",
       "skillPath": "skills/better-typography/SKILL.md",
-      "skillFolderHash": "25751e782efef061becc8922bb31e378d57fc7b8",
+      "skillFolderHash": "aead1cd1526b13690c48513115030728cfbd4c2f",
       "installedAt": "2026-10-23T03:25:31.608Z",
-      "updatedAt": "2026-10-23T03:25:31.608Z"
+      "updatedAt": "2026-10-26T22:13:29.822Z"
     },
     "better-colors": {
       "source": "jakubkrehel/skills",
       "sourceType": "github",
       "sourceUrl": "https://github.com/jakubkrehel/skills.git",
       "skillPath": "skills/better-colors/SKILL.md",
-      "skillFolderHash": "1f96b150ca7f25fd63ba6079a2ceaf75849186f5",
+      "skillFolderHash": "5851236fb32cabcb93e2a6aa424305fe38a1894b",
       "installedAt": "2026-10-23T03:25:33.361Z",
-      "updatedAt": "2026-10-23T03:25:33.361Z"
+      "updatedAt": "2026-10-26T22:13:30.976Z"
     },
     "better-layout": {
       "source": "jakubkrehel/skills",
       "sourceType": "github",
       "sourceUrl": "https://github.com/jakubkrehel/skills.git",
       "skillPath": "skills/better-layout/SKILL.md",
-      "skillFolderHash": "7ffa8ef65b63bd160eef9d32d1a4493d98260d0f",
+      "skillFolderHash": "4c3a6e2e53026e171e79b17b0d86c8d4d8639f49",
       "installedAt": "2026-10-23T03:25:35.111Z",
-      "updatedAt": "2026-10-23T03:25:35.111Z"
+      "updatedAt": "2026-10-26T22:13:32.292Z"
     }
   },
   "dismissed": {
