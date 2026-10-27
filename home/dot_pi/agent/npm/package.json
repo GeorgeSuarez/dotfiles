@@ -7,8 +7,8 @@
     "@narumitw/pi-btw": "^0.63.1",
     "@narumitw/pi-usage": "^0.68.3",
     "@nicknisi/pi-cloak": "^0.2.0",
-    "@plannotator/pi-extension": "^0.28.31",
-    "pi-lens": "^4.4.5"
+    "@plannotator/pi-extension": "^0.28.33",
+    "pi-lens": "^4.4.6"
   },
   "allowScripts": {
     "@ast-grep/cli@0.45.3": true,
