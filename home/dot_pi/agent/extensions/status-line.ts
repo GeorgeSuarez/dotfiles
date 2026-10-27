@@ -9,6 +9,13 @@ function compactNumber(value: number | null | undefined): string {
 	return String(value);
 }
 
+function contextColorFor(percent: number | null): "success" | "warning" | "error" {
+	if (percent === null) return "success";
+	if (percent >= 90) return "error";
+	if (percent >= 75) return "warning";
+	return "success";
+}
+
 function sessionUsage(ctx: ExtensionContext): { input: number; output: number; cost: number } {
 	let input = 0;
 	let output = 0;
@@ -42,11 +49,11 @@ export default function statusLine(pi: ExtensionAPI) {
 					const usage = sessionUsage(ctx);
 					const context = ctx.getContextUsage();
 					const percent = context?.percent ?? null;
+					const percentLabel = percent === null ? "?" : `${percent.toFixed(0)}%`;
 					const contextLabel = context
-						? `${compactNumber(context.tokens)}/${compactNumber(context.contextWindow)} ${percent === null ? "?" : `${percent.toFixed(0)}%`}`
+						? `${compactNumber(context.tokens)}/${compactNumber(context.contextWindow)} ${percentLabel}`
 						: "?";
-					const contextColor: "success" | "warning" | "error" =
-						percent !== null && percent >= 90 ? "error" : percent !== null && percent >= 75 ? "warning" : "success";
+					const contextColor = contextColorFor(percent);
 
 					const cwd = process.cwd().replace(new RegExp(`^${process.env.HOME}`), "~");
 					const branch = footerData.getGitBranch();
@@ -68,9 +75,12 @@ export default function statusLine(pi: ExtensionAPI) {
 						theme.fg("syntaxNumber", `↑${compactNumber(usage.input)} ↓${compactNumber(usage.output)}`),
 						costPart,
 					].join(separator);
-					const statusPart = extensionStatuses.length > 0
-						? `${extensionStatuses.slice(0, 2).join(separator)}${extensionStatuses.length > 2 ? separator + theme.fg("dim", `+${extensionStatuses.length - 2}`) : ""}`
-						: "";
+					let statusPart = "";
+					if (extensionStatuses.length > 0) {
+						const overflow = extensionStatuses.length - 2;
+						statusPart = extensionStatuses.slice(0, 2).join(separator);
+						if (overflow > 0) statusPart += separator + theme.fg("dim", `+${overflow}`);
+					}
 					const right = [statusPart, modelPart].filter(Boolean).join(separator);
 					const full = right ? `${detailLeft}${separator}${right}${thinkingPart}` : `${detailLeft}${thinkingPart}`;
 

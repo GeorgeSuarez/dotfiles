@@ -122,7 +122,7 @@ export const MAX_VISIBLE_ITEMS = 8;
 /** "(n) a, b, c" or "(n) a, b +k more" when truncated. Pure for testing. */
 export function formatNameList(names: string[]): string {
   if (names.length === 0) return "none";
-  const sorted = [...names].sort();
+  const sorted = [...names].sort((a, b) => a.localeCompare(b));
   if (sorted.length <= MAX_VISIBLE_ITEMS) return `(${sorted.length}) ${sorted.join(", ")}`;
   const visible = sorted.slice(0, MAX_VISIBLE_ITEMS);
   return `(${sorted.length}) ${visible.join(", ")} +${sorted.length - visible.length} more`;
@@ -503,13 +503,11 @@ export default function startupHeader(pi: ExtensionAPI) {
     } catch {
       // ignore command source errors
     }
-    const extNames = Array.from(new Set([...extPaths].map(extensionDisplayName))).sort();
-    const agentsDisplay =
-      agentsPaths === undefined
-        ? loaded.agents
-        : agentsPaths.length === 0
-          ? "none"
-          : agentsPaths.map((p) => displayPath(p, cwd)).join(", ");
+    const extNames = Array.from(new Set([...extPaths].map(extensionDisplayName))).sort((a, b) => a.localeCompare(b));
+    let agentsDisplay = loaded.agents;
+    if (agentsPaths !== undefined) {
+      agentsDisplay = agentsPaths.length === 0 ? "none" : agentsPaths.map((p) => displayPath(p, cwd)).join(", ");
+    }
     loaded = {
       model: modelLabel || "no-model",
       cwdDir: displayCwd(cwd),

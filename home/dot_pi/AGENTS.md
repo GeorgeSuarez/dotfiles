@@ -38,7 +38,7 @@ npm run typecheck
 npm test
 ```
 
-`npm run typecheck` runs strict no-emit TypeScript checking. `npm test` runs Bun tests from `tests/*.test.mjs`, covering web search/fetch, startup-header behavior, and extension features. `tests/feature-extensions.test.mjs` imports `agent/extensions/hark/index.ts`, which is present in the live extension directory but absent from tracked source; reconcile that runtime-only dependency before expecting the full suite to pass from a clean checkout.
+`npm run typecheck` runs strict no-emit TypeScript checking. `npm test` runs Bun tests from `tests/*.test.mjs`, covering web search/fetch and startup-header behavior.
 
 When adding tests:
 

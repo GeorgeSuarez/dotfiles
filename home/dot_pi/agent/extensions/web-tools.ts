@@ -126,7 +126,12 @@ export function selectProvider(): Provider {
 function exaUrl(): string {
   const apiKey = process.env.EXA_API_KEY;
   if (!apiKey) return EXA_URL;
-  const url = new URL(EXA_URL);
+  let url: URL;
+  try {
+    url = new URL(EXA_URL);
+  } catch {
+    throw new Error(`Invalid EXA_URL constant: ${EXA_URL}`);
+  }
   url.searchParams.set("exaApiKey", apiKey);
   return url.toString();
 }
@@ -142,23 +147,26 @@ function requestBody(
   params: WebSearchParameters,
   ctx: ExtensionContext,
 ): string {
-  const args =
-    provider === "exa"
-      ? {
-          query: params.query,
-          type: params.type ?? "auto",
-          numResults: params.numResults ?? 8,
-          livecrawl: params.livecrawl ?? "fallback",
-          ...(params.contextMaxCharacters === undefined
-            ? {}
-            : { contextMaxCharacters: params.contextMaxCharacters }),
-        }
-      : {
-          objective: params.query,
-          search_queries: [params.query],
-          session_id: ctx.sessionManager.getSessionId(),
-          ...(modelName(ctx) ? { model_name: modelName(ctx) } : {}),
-        };
+  let args: Record<string, unknown>;
+  if (provider === "exa") {
+    args = {
+      query: params.query,
+      type: params.type ?? "auto",
+      numResults: params.numResults ?? 8,
+      livecrawl: params.livecrawl ?? "fallback",
+    };
+    if (params.contextMaxCharacters !== undefined) {
+      args.contextMaxCharacters = params.contextMaxCharacters;
+    }
+  } else {
+    args = {
+      objective: params.query,
+      search_queries: [params.query],
+      session_id: ctx.sessionManager.getSessionId(),
+    };
+    const name = modelName(ctx);
+    if (name) args.model_name = name;
+  }
 
   return JSON.stringify({
     jsonrpc: "2.0",
@@ -200,7 +208,13 @@ async function readBody(response: Response, signal: AbortSignal): Promise<string
 function payloadText(payload: string): string | undefined {
   const trimmed = payload.trim();
   if (!trimmed.startsWith("{")) return undefined;
-  const data = JSON.parse(trimmed) as McpPayload;
+  let data: McpPayload;
+  try {
+    data = JSON.parse(trimmed) as McpPayload;
+  } catch {
+    // A malformed chunk is not a payload; skip it rather than failing the search.
+    return undefined;
+  }
   return data.result?.content?.find((item) => typeof item.text === "string" && item.text.length > 0)
     ?.text as string | undefined;
 }
@@ -307,7 +321,12 @@ async function readBounded(
 }
 
 function validateUrl(input: string): URL {
-  const url = new URL(input);
+  let url: URL;
+  try {
+    url = new URL(input);
+  } catch {
+    throw new Error(`Invalid URL: ${input}`);
+  }
   if (url.protocol !== "http:" && url.protocol !== "https:") {
     throw new Error("Only HTTP and HTTPS URLs are supported");
   }

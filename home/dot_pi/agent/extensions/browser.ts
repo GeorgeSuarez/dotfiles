@@ -19,9 +19,17 @@ function configuredDomains(): string[] {
 		.filter(Boolean);
 }
 
+function parseUrl(urlText: string): URL {
+	try {
+		return new URL(urlText);
+	} catch {
+		throw new Error(`browser: invalid URL "${urlText}"`);
+	}
+}
+
 function assertAllowed(urlText: string | undefined): void {
 	if (!urlText) return;
-	const url = new URL(urlText);
+	const url = parseUrl(urlText);
 	const allowed = configuredDomains();
 	if (allowed.length === 0) return;
 	const host = url.hostname.toLowerCase();
@@ -52,6 +60,10 @@ function argsFor(params: Params): string[] {
 			return params.text ? ["screenshot", params.text] : ["screenshot"];
 		case "url":
 			return ["get", "url"];
+		default: {
+			const action: never = params.action;
+			throw new Error(`browser: unsupported action "${String(action)}"`);
+		}
 	}
 }
 
