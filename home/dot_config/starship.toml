@@ -1,7 +1,7 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
 palette = 'tokyo-night'
-command_timeout = 200
+command_timeout = 500
 
 format = """
 [░▒▓](lavender)\
