@@ -18,7 +18,7 @@ const TIMEOUT_MS = 25_000;
 const WebSearchParameters = Type.Object({
   query: Type.String({ description: "Websearch query" }),
   numResults: Type.Optional(
-    Type.Number({
+    Type.Integer({
       minimum: 1,
       maximum: MAX_NUM_RESULTS,
       description: `Number of search results to return (default: 8, maximum: ${MAX_NUM_RESULTS})`,
@@ -37,7 +37,7 @@ const WebSearchParameters = Type.Object({
     }),
   ),
   contextMaxCharacters: Type.Optional(
-    Type.Number({
+    Type.Integer({
       minimum: 1,
       maximum: MAX_CONTEXT_CHARACTERS,
       description: `Maximum characters for context string optimized for models (default: 10000, maximum: ${MAX_CONTEXT_CHARACTERS})`,
@@ -58,7 +58,8 @@ const WebfetchParameters = Type.Object({
   url: Type.String({ description: "HTTP or HTTPS URL to fetch" }),
   format: Type.Optional(
     StringEnum(["auto", "markdown", "text", "raw"] as const, {
-      description: "Output format. Auto converts HTML pages to readable text.",
+      description:
+        "Output format. 'raw' returns the body unchanged; 'text' and 'markdown' convert HTML to readable text; 'auto' converts only when the response is HTML.",
     }),
   ),
 });
@@ -126,12 +127,7 @@ export function selectProvider(): Provider {
 function exaUrl(): string {
   const apiKey = process.env.EXA_API_KEY;
   if (!apiKey) return EXA_URL;
-  let url: URL;
-  try {
-    url = new URL(EXA_URL);
-  } catch {
-    throw new Error(`Invalid EXA_URL constant: ${EXA_URL}`);
-  }
+  const url = new URL(EXA_URL);
   url.searchParams.set("exaApiKey", apiKey);
   return url.toString();
 }
@@ -147,26 +143,23 @@ function requestBody(
   params: WebSearchParameters,
   ctx: ExtensionContext,
 ): string {
-  let args: Record<string, unknown>;
-  if (provider === "exa") {
-    args = {
-      query: params.query,
-      type: params.type ?? "auto",
-      numResults: params.numResults ?? 8,
-      livecrawl: params.livecrawl ?? "fallback",
-    };
-    if (params.contextMaxCharacters !== undefined) {
-      args.contextMaxCharacters = params.contextMaxCharacters;
-    }
-  } else {
-    args = {
-      objective: params.query,
-      search_queries: [params.query],
-      session_id: ctx.sessionManager.getSessionId(),
-    };
-    const name = modelName(ctx);
-    if (name) args.model_name = name;
-  }
+  const args =
+    provider === "exa"
+      ? {
+          query: params.query,
+          type: params.type ?? "auto",
+          numResults: params.numResults ?? 8,
+          livecrawl: params.livecrawl ?? "fallback",
+          ...(params.contextMaxCharacters === undefined
+            ? {}
+            : { contextMaxCharacters: params.contextMaxCharacters }),
+        }
+      : {
+          objective: params.query,
+          search_queries: [params.query],
+          session_id: ctx.sessionManager.getSessionId(),
+          ...(modelName(ctx) ? { model_name: modelName(ctx) } : {}),
+        };
 
   return JSON.stringify({
     jsonrpc: "2.0",
@@ -208,13 +201,7 @@ async function readBody(response: Response, signal: AbortSignal): Promise<string
 function payloadText(payload: string): string | undefined {
   const trimmed = payload.trim();
   if (!trimmed.startsWith("{")) return undefined;
-  let data: McpPayload;
-  try {
-    data = JSON.parse(trimmed) as McpPayload;
-  } catch {
-    // A malformed chunk is not a payload; skip it rather than failing the search.
-    return undefined;
-  }
+  const data = JSON.parse(trimmed) as McpPayload;
   return data.result?.content?.find((item) => typeof item.text === "string" && item.text.length > 0)
     ?.text as string | undefined;
 }
@@ -321,12 +308,7 @@ async function readBounded(
 }
 
 function validateUrl(input: string): URL {
-  let url: URL;
-  try {
-    url = new URL(input);
-  } catch {
-    throw new Error(`Invalid URL: ${input}`);
-  }
+  const url = new URL(input);
   if (url.protocol !== "http:" && url.protocol !== "https:") {
     throw new Error("Only HTTP and HTTPS URLs are supported");
   }
@@ -356,10 +338,13 @@ export default function web(pi: ExtensionAPI) {
           content: [{ type: "text", text: result ?? NO_RESULTS }],
           details: { provider, query },
         };
-      } catch {
+      } catch (error) {
+        // A user interrupt is not a search failure: let pi cancel the call.
+        if (signal?.aborted) throw error;
+        const reason = (error instanceof Error ? error.message : String(error)).slice(0, 300);
         return {
-          content: [{ type: "text", text: SEARCH_FAILURE(query) }],
-          details: { provider, query, error: true },
+          content: [{ type: "text", text: `${SEARCH_FAILURE(query)}: ${reason}` }],
+          details: { provider, query, error: true, reason },
         };
       }
     },
@@ -392,12 +377,13 @@ export default function web(pi: ExtensionAPI) {
         const fetched = await readBounded(response, controller.signal);
         const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
         const format = params.format ?? "auto";
-        const text =
-          format === "raw" ||
+        // Only "raw" keeps the body untouched; "text" and "markdown" both
+        // flatten HTML, and "auto" flattens only when the body is HTML.
+        const convert =
           format === "text" ||
-          (format === "auto" && !contentType.includes("html"))
-            ? fetched.text
-            : htmlToText(fetched.text);
+          format === "markdown" ||
+          (format === "auto" && contentType.includes("html"));
+        const text = convert ? htmlToText(fetched.text) : fetched.text;
         return {
           content: [
             {
@@ -408,6 +394,7 @@ export default function web(pi: ExtensionAPI) {
           details: { url: url.toString(), contentType, truncated: fetched.truncated },
         };
       } catch (error) {
+        if (signal?.aborted) throw error;
         throw new Error(
           `Unable to fetch ${url}: ${error instanceof Error ? error.message : String(error)}`,
         );

@@ -1,24 +1,22 @@
+import type { AssistantMessage } from "@earendil-works/pi-ai";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { writeFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { resolve, sep } from "node:path";
 
 function textContent(content: unknown): string {
   if (!Array.isArray(content)) return "";
 
   return content
-    .flatMap((block) => {
-      if (
+    .filter(
+      (block): block is { type: "text"; text: string } =>
         typeof block === "object" &&
         block !== null &&
         "type" in block &&
         block.type === "text" &&
         "text" in block &&
-        typeof block.text === "string"
-      ) {
-        return [block.text];
-      }
-      return [];
-    })
+        typeof block.text === "string",
+    )
+    .map((block) => block.text)
     .join("\n\n");
 }
 
@@ -29,19 +27,16 @@ export default function saveMarkdownExtension(pi: ExtensionAPI) {
       await ctx.waitForIdle();
 
       const branch = ctx.sessionManager.getBranch();
-      // Structural type taken from the entry itself: the message carries the
-      // @earendil-works/pi-ai copy pinned by pi-agent-core, not the workspace's
-      // top-level one, so annotating with the imported AssistantMessage clashes.
-      let assistantMessage: { content: unknown } | undefined;
+      let assistentMessage: AssistantMessage | undefined;
       for (let index = branch.length - 1; index >= 0; index--) {
         const entry = branch[index];
         if (entry?.type === "message" && entry.message.role === "assistant") {
-          assistantMessage = entry.message;
+          assistentMessage = entry.message;
           break;
         }
       }
 
-      if (!assistantMessage) {
+      if (!assistentMessage) {
         ctx.ui.notify("No assistant response to save", "warning");
         return;
       }
@@ -52,14 +47,19 @@ export default function saveMarkdownExtension(pi: ExtensionAPI) {
         return;
       }
 
-      const markdown = textContent(assistantMessage.content);
+      const markdown = textContent(assistentMessage.content);
       if (!markdown.trim()) {
         ctx.ui.notify("The latest assistant response has no Markdown text", "warning");
         return;
       }
 
       const fileName = name.endsWith(".md") ? name : `${name}.md`;
-      const path = resolve(ctx.cwd, fileName);
+      const root = resolve(ctx.cwd);
+      const path = resolve(root, fileName);
+      if (path !== root && !path.startsWith(`${root}${sep}`)) {
+        ctx.ui.notify(`Refusing to write outside the working directory: ${path}`, "error");
+        return;
+      }
 
       try {
         await writeFile(path, markdown.endsWith("\n") ? markdown : `${markdown}\n`, {

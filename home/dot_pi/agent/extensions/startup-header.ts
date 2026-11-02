@@ -88,7 +88,11 @@ function logoBg(color: readonly [number, number, number], mode: LogoColorMode): 
  * Logo column rows: each terminal cell stacks two grid pixels, so 16 pixel
  * rows render as 8 terminal rows of 16 columns. Pure for testing.
  */
+const logoRowsCache = new Map<LogoColorMode, string[]>();
+
 export function getPiLogoRows(mode: LogoColorMode = "truecolor"): string[] {
+  const cached = logoRowsCache.get(mode);
+  if (cached) return cached;
   const rows: string[] = [];
   for (let y = 0; y < PI_LOGO_GRID.length; y += 2) {
     const top = PI_LOGO_GRID[y] ?? "";
@@ -113,6 +117,7 @@ export function getPiLogoRows(mode: LogoColorMode = "truecolor"): string[] {
     }
     rows.push(line);
   }
+  logoRowsCache.set(mode, rows);
   return rows;
 }
 
@@ -122,7 +127,7 @@ export const MAX_VISIBLE_ITEMS = 8;
 /** "(n) a, b, c" or "(n) a, b +k more" when truncated. Pure for testing. */
 export function formatNameList(names: string[]): string {
   if (names.length === 0) return "none";
-  const sorted = [...names].sort((a, b) => a.localeCompare(b));
+  const sorted = [...names].sort();
   if (sorted.length <= MAX_VISIBLE_ITEMS) return `(${sorted.length}) ${sorted.join(", ")}`;
   const visible = sorted.slice(0, MAX_VISIBLE_ITEMS);
   return `(${sorted.length}) ${visible.join(", ")} +${sorted.length - visible.length} more`;
@@ -216,7 +221,12 @@ export function buildMcpEntriesFromTools(
 }
 
 /** Read only server names (keys) from global + project mcp.json. Never reads values/credentials. */
+const mcpConfigNamesCache = new Map<string, string[]>();
+
 export function readMcpConfigServerNames(agentDir: string, cwd: string): string[] {
+  const cacheKey = `${agentDir}\u0000${cwd}`;
+  const cached = mcpConfigNamesCache.get(cacheKey);
+  if (cached) return cached;
   const names: string[] = [];
   const files = [join(agentDir, "mcp.json")];
   // Project config only affects display-name recovery (inclusion is driven by
@@ -234,6 +244,8 @@ export function readMcpConfigServerNames(agentDir: string, cwd: string): string[
       // missing/unparsable config contributes no names
     }
   }
+  if (mcpConfigNamesCache.size >= 8) mcpConfigNamesCache.clear();
+  mcpConfigNamesCache.set(cacheKey, names);
   return names;
 }
 
@@ -336,19 +348,30 @@ export function extensionDisplayName(extPath: string): string {
   return base.replace(/\.[tj]s$/, "");
 }
 
+/**
+ * Prefix-safe home shortening: under a `/home/me` home directory, `/home/me2`
+ * must stay absolute instead of becoming `~2`.
+ */
+function shortenHome(value: string): string {
+  const home = homedir();
+  if (!home) return value;
+  if (value === home) return "~";
+  return value.startsWith(`${home}/`) || value.startsWith(`${home}\\`)
+    ? `~${value.slice(home.length)}`
+    : value;
+}
+
 /** Shorten a context path: relative when under cwd, ~/ when under home. */
 export function displayPath(path: string, cwd: string): string {
   const rel = relative(cwd, path);
   if (rel && !rel.startsWith("..") && !rel.startsWith("/")) return rel;
-  const home = homedir();
-  return path.startsWith(home) ? `~${path.slice(home.length)}` : path;
+  return shortenHome(path);
 }
 
 /** Shorten cwd itself: ~/ when under home, otherwise full. */
 export function displayCwd(cwd: string): string {
-  const home = homedir();
   if (!cwd) return "none";
-  return cwd.startsWith(home) ? `~${cwd.slice(home.length)}` : cwd;
+  return shortenHome(cwd);
 }
 
 export interface LoadedInfo {
@@ -376,7 +399,24 @@ export const TOKYO_NIGHT = {
   orange: "#ff9e64",
 } as const;
 
+let tableCache: { theme: Theme; key: string; lines: string[] } | undefined;
+
 function buildTable(theme: Theme, width: number, loaded: LoadedInfo): string[] {
+  // The header renders on every frame; rebuild only when width, theme, or the
+  // snapshot content actually changes.
+  const key = [
+    width,
+    loaded.model,
+    loaded.cwdDir,
+    loaded.mcps,
+    loaded.tools,
+    loaded.agents,
+    loaded.extensions,
+  ].join("\u0000");
+  if (tableCache && tableCache.theme === theme && tableCache.key === key) {
+    return tableCache.lines;
+  }
+
   const logoRows = getPiLogoRows(theme.getColorMode?.() ?? "truecolor");
   const logoWidth = Math.max(...logoRows.map((r) => visibleWidth(r)));
   const valueWidth = Math.max(width - logoWidth - 7, 8);
@@ -442,7 +482,9 @@ function buildTable(theme: Theme, width: number, loaded: LoadedInfo): string[] {
     else lines.push(row(logoCell, spec.chunk, spec.color));
   });
   lines.push(sep("┗", "┻", "┛"));
-  return lines.map((line) => truncateToWidth(line, width));
+  const rendered = lines.map((line) => truncateToWidth(line, width));
+  tableCache = { theme, key, lines: rendered };
+  return rendered;
 }
 
 export function buildHeaderLines(theme: Theme, width: number, loaded: LoadedInfo): string[] {
@@ -461,19 +503,14 @@ export default function startupHeader(pi: ExtensionAPI) {
   let requestRender: (() => void) | undefined;
   let lastCwd = "";
   let lastAgentDir = getAgentDir();
+  let diskExtensionPaths: string[] = [];
 
-  function currentMcpDisplay(): string {
-    // Recomputed live on every render so async MCP connections appear
-    // without waiting for the next snapshot event.
-    try {
-      const entries = readLiveMcpEntries(pi, lastAgentDir, lastCwd);
-      return formatMcpEntriesDisplay(entries);
-    } catch {
-      return loaded.mcps;
-    }
-  }
-
-  function snapshot(agentsPaths: string[] | undefined, cwd: string, modelLabel: string): void {
+  function snapshot(
+    agentsPaths: string[] | undefined,
+    cwd: string,
+    modelLabel: string,
+    scanDisk = false,
+  ): void {
     lastCwd = cwd || "";
     try {
       lastAgentDir = getAgentDir();
@@ -487,7 +524,13 @@ export default function startupHeader(pi: ExtensionAPI) {
     } catch {
       toolNames = [];
     }
-    const extPaths = new Set<string>(scanExtensionPaths(cwd));
+    // Disk scans are synchronous: run them on session start (or once when no
+    // scan has happened yet) and let the in-memory tool/command sources keep
+    // the header current on later turns.
+    if (scanDisk || diskExtensionPaths.length === 0) {
+      diskExtensionPaths = scanExtensionPaths(cwd);
+    }
+    const extPaths = new Set<string>(diskExtensionPaths);
     try {
       for (const t of pi.getAllTools?.() ?? []) {
         const p = (t as { sourceInfo?: { path?: string } })?.sourceInfo?.path;
@@ -503,11 +546,13 @@ export default function startupHeader(pi: ExtensionAPI) {
     } catch {
       // ignore command source errors
     }
-    const extNames = Array.from(new Set([...extPaths].map(extensionDisplayName))).sort((a, b) => a.localeCompare(b));
-    let agentsDisplay = loaded.agents;
-    if (agentsPaths !== undefined) {
-      agentsDisplay = agentsPaths.length === 0 ? "none" : agentsPaths.map((p) => displayPath(p, cwd)).join(", ");
-    }
+    const extNames = Array.from(new Set([...extPaths].map(extensionDisplayName))).sort();
+    const agentsDisplay =
+      agentsPaths === undefined
+        ? loaded.agents
+        : agentsPaths.length === 0
+          ? "none"
+          : agentsPaths.map((p) => displayPath(p, cwd)).join(", ");
     loaded = {
       model: modelLabel || "no-model",
       cwdDir: displayCwd(cwd),
@@ -521,12 +566,13 @@ export default function startupHeader(pi: ExtensionAPI) {
   pi.on("session_start", async (_event, ctx) => {
     if (ctx.mode !== "tui") return;
     const modelLabel = ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : "no-model";
-    snapshot(scanAgentsFiles(ctx.cwd).map((f) => f.path), ctx.cwd, modelLabel);
+    snapshot(scanAgentsFiles(ctx.cwd).map((f) => f.path), ctx.cwd, modelLabel, true);
     ctx.ui.setHeader((tui, _theme) => {
       requestRender = () => tui.requestRender();
       return {
-        render: (width: number) =>
-          buildHeaderLines(_theme, width, { ...loaded, mcps: currentMcpDisplay() }),
+        // Frame renders must stay allocation-only: no disk reads or JSON
+        // parsing here. The snapshot events above refresh the data.
+        render: (width: number) => buildHeaderLines(_theme, width, loaded),
         invalidate() {},
       };
     });

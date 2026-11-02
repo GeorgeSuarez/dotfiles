@@ -631,8 +631,7 @@ const messages = [
 ];
 
 function pickRandom(): string {
-  // Two-step fallback keeps this total without a non-null assertion.
-  return messages[Math.floor(Math.random() * messages.length)] ?? messages[0] ?? "";
+  return messages[Math.floor(Math.random() * messages.length)]!;
 }
 
 export default function (pi: ExtensionAPI) {

@@ -1,6 +1,7 @@
 import type { AssistantMessage } from "@earendil-works/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
+import { homedir } from "node:os";
 
 function compactNumber(value: number | null | undefined): string {
 	if (value === null || value === undefined) return "?";
@@ -9,25 +10,46 @@ function compactNumber(value: number | null | undefined): string {
 	return String(value);
 }
 
-function contextColorFor(percent: number | null): "success" | "warning" | "error" {
-	if (percent === null) return "success";
-	if (percent >= 90) return "error";
-	if (percent >= 75) return "warning";
-	return "success";
+/** Shorten a path under the home directory, without mangling siblings such as
+ * `/home/me2` into `~2` (the boundary bug pi fixed in its own core). */
+function shortenHome(value: string): string {
+	const home = process.env.HOME ?? homedir();
+	if (!home) return value;
+	if (value === home) return "~";
+	return value.startsWith(`${home}/`) ? `~${value.slice(home.length)}` : value;
 }
 
-function sessionUsage(ctx: ExtensionContext): { input: number; output: number; cost: number } {
+interface SessionUsage {
+	input: number;
+	output: number;
+	cost: number;
+}
+
+let usageCache: { key: string; usage: SessionUsage } | undefined;
+
+/**
+ * The footer renders on every frame, so the branch walk is memoized. Session
+ * entries are append-only, so the leaf id plus the branch length identifies the
+ * contents; a branch switch changes the leaf id.
+ */
+function sessionUsage(ctx: ExtensionContext): SessionUsage {
+	const branch = ctx.sessionManager.getBranch();
+	const key = `${ctx.sessionManager.getLeafId() ?? ""}:${branch.length}`;
+	if (usageCache?.key === key) return usageCache.usage;
+
 	let input = 0;
 	let output = 0;
 	let cost = 0;
-	for (const entry of ctx.sessionManager.getBranch()) {
+	for (const entry of branch) {
 		if (entry.type !== "message" || entry.message.role !== "assistant") continue;
 		const usage = (entry.message as AssistantMessage).usage;
 		input += usage.input;
 		output += usage.output;
 		cost += usage.cost.total;
 	}
-	return { input, output, cost };
+	const usage = { input, output, cost };
+	usageCache = { key, usage };
+	return usage;
 }
 
 export default function statusLine(pi: ExtensionAPI) {
@@ -49,13 +71,13 @@ export default function statusLine(pi: ExtensionAPI) {
 					const usage = sessionUsage(ctx);
 					const context = ctx.getContextUsage();
 					const percent = context?.percent ?? null;
-					const percentLabel = percent === null ? "?" : `${percent.toFixed(0)}%`;
 					const contextLabel = context
-						? `${compactNumber(context.tokens)}/${compactNumber(context.contextWindow)} ${percentLabel}`
+						? `${compactNumber(context.tokens)}/${compactNumber(context.contextWindow)} ${percent === null ? "?" : `${percent.toFixed(0)}%`}`
 						: "?";
-					const contextColor = contextColorFor(percent);
+					const contextColor: "success" | "warning" | "error" =
+						percent !== null && percent >= 90 ? "error" : percent !== null && percent >= 75 ? "warning" : "success";
 
-					const cwd = process.cwd().replace(new RegExp(`^${process.env.HOME}`), "~");
+					const cwd = shortenHome(ctx.cwd);
 					const branch = footerData.getGitBranch();
 					const model = ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : "no-model";
 					const thinkingLevel = ctx.thinkingLevel && ctx.thinkingLevel !== "off" ? ctx.thinkingLevel : null;
@@ -75,12 +97,9 @@ export default function statusLine(pi: ExtensionAPI) {
 						theme.fg("syntaxNumber", `↑${compactNumber(usage.input)} ↓${compactNumber(usage.output)}`),
 						costPart,
 					].join(separator);
-					let statusPart = "";
-					if (extensionStatuses.length > 0) {
-						const overflow = extensionStatuses.length - 2;
-						statusPart = extensionStatuses.slice(0, 2).join(separator);
-						if (overflow > 0) statusPart += separator + theme.fg("dim", `+${overflow}`);
-					}
+					const statusPart = extensionStatuses.length > 0
+						? `${extensionStatuses.slice(0, 2).join(separator)}${extensionStatuses.length > 2 ? separator + theme.fg("dim", `+${extensionStatuses.length - 2}`) : ""}`
+						: "";
 					const right = [statusPart, modelPart].filter(Boolean).join(separator);
 					const full = right ? `${detailLeft}${separator}${right}${thinkingPart}` : `${detailLeft}${thinkingPart}`;
 

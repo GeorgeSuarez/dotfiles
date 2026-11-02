@@ -26,7 +26,7 @@
       "skillPath": "skills/productivity/grill-me/SKILL.md",
       "skillFolderHash": "3df14e2d3a89459bf300614be9247e3ce74798f8",
       "installedAt": "2026-07-31T11:53:55.625Z",
-      "updatedAt": "2026-08-21T11:00:38.280Z"
+      "updatedAt": "2026-11-02T22:58:06.225Z"
     },
     "tdd": {
       "source": "mattpocock/skills",
@@ -35,7 +35,7 @@
       "skillPath": "skills/engineering/tdd/SKILL.md",
       "skillFolderHash": "667dbdd00c09d0e2189e082986e6a4d61a67c2a6",
       "installedAt": "2026-07-31T11:53:55.629Z",
-      "updatedAt": "2026-10-07T21:21:01.684Z"
+      "updatedAt": "2026-11-02T22:58:06.259Z"
     },
     "prototype": {
       "source": "mattpocock/skills",
@@ -53,7 +53,7 @@
       "skillPath": "skills/engineering/domain-modeling/SKILL.md",
       "skillFolderHash": "ea30ee454ba264543dbe40737973b1a5afb9f0e6",
       "installedAt": "2026-07-31T11:53:55.633Z",
-      "updatedAt": "2026-10-02T22:49:47.971Z"
+      "updatedAt": "2026-11-02T22:58:06.292Z"
     },
     "diagnosing-bugs": {
       "source": "mattpocock/skills",
@@ -69,9 +69,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/mattpocock/skills.git",
       "skillPath": "skills/productivity/grilling/SKILL.md",
-      "skillFolderHash": "28aceb4c9567b985cb47f7db88cf23c9f33af8b8",
+      "skillFolderHash": "f551b6e0d219fdda0b6abf277f8f915b3127d1e9",
       "installedAt": "2026-07-31T11:53:55.635Z",
-      "updatedAt": "2026-10-07T21:21:04.469Z"
+      "updatedAt": "2026-11-02T22:58:06.321Z"
     },
     "grill-with-docs": {
       "source": "mattpocock/skills",
@@ -80,7 +80,7 @@
       "skillPath": "skills/engineering/grill-with-docs/SKILL.md",
       "skillFolderHash": "eedaf2562c83155115e9c649fa3ecaac2e10e81d",
       "installedAt": "2026-07-31T11:53:55.636Z",
-      "updatedAt": "2026-08-21T11:00:52.968Z"
+      "updatedAt": "2026-11-02T22:58:06.350Z"
     },
     "handoff": {
       "source": "mattpocock/skills",
@@ -96,9 +96,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/mattpocock/skills.git",
       "skillPath": "skills/engineering/research/SKILL.md",
-      "skillFolderHash": "0a6796c5667e95ed2301ba7381c123b4acb2ae1a",
+      "skillFolderHash": "2f8f36af48796faed5c687c75bb650071631a984",
       "installedAt": "2026-07-31T11:53:55.636Z",
-      "updatedAt": "2026-08-21T11:00:54.880Z"
+      "updatedAt": "2026-11-02T22:58:06.378Z"
     },
     "install-anti-slop": {
       "source": "dmmulroy/anti-slop",
@@ -134,9 +134,9 @@
       "sourceUrl": "https://github.com/trycua/cua.git",
       "ref": "main",
       "skillPath": "libs/cua-driver/rust/Skills/cua-driver/SKILL.md",
-      "skillFolderHash": "12db5f6136364f5748e8768cf1fc7ba2e84ecaa8",
+      "skillFolderHash": "2adef550ad7cb85f07c53c1cf74221d142d228b1",
       "installedAt": "2026-09-10T02:29:16.149Z",
-      "updatedAt": "2026-10-26T22:13:25.710Z"
+      "updatedAt": "2026-11-02T22:58:06.855Z"
     },
     "show-me": {
       "source": "humanlayer/skills",
@@ -171,9 +171,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/emilkowalski/skills.git",
       "skillPath": "skills/emil-design-eng/SKILL.md",
-      "skillFolderHash": "db7a20dc1d8ad26a0307dcb45ebc79fc372f5c69",
+      "skillFolderHash": "e79b9cc03e06efe8d40349bc39df0ed4a9d5deff",
       "installedAt": "2026-10-23T03:25:28.237Z",
-      "updatedAt": "2026-10-23T03:25:28.237Z"
+      "updatedAt": "2026-11-02T22:58:06.872Z"
     },
     "better-ui": {
       "source": "jakubkrehel/skills",
