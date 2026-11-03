@@ -52,6 +52,35 @@ function sessionUsage(ctx: ExtensionContext): SessionUsage {
 	return usage;
 }
 
+type ContextUsage = NonNullable<ReturnType<ExtensionContext["getContextUsage"]>>;
+
+/** "used/window pct", or "?" before pi knows the context window. */
+function formatContextLabel(context: ContextUsage | undefined, percent: number | null): string {
+	if (!context) return "?";
+	const size = `${compactNumber(context.tokens)}/${compactNumber(context.contextWindow)}`;
+	return `${size} ${percent === null ? "?" : `${percent.toFixed(0)}%`}`;
+}
+
+/** Green under 75%, amber from 75%, red from 90%. */
+function contextColorFor(percent: number | null): "success" | "warning" | "error" {
+	if (percent === null) return "success";
+	if (percent >= 90) return "error";
+	if (percent >= 75) return "warning";
+	return "success";
+}
+
+/** First two extension statuses, then a dimmed "+n" tail. */
+function formatExtensionStatuses(
+	statuses: string[],
+	separator: string,
+	dim: (text: string) => string,
+): string {
+	if (statuses.length === 0) return "";
+	const shown = statuses.slice(0, 2).join(separator);
+	if (statuses.length <= 2) return shown;
+	return `${shown}${separator}${dim(`+${statuses.length - 2}`)}`;
+}
+
 export default function statusLine(pi: ExtensionAPI) {
 	let enabled = process.env.PI_STATUS_LINE !== "off";
 
@@ -71,11 +100,8 @@ export default function statusLine(pi: ExtensionAPI) {
 					const usage = sessionUsage(ctx);
 					const context = ctx.getContextUsage();
 					const percent = context?.percent ?? null;
-					const contextLabel = context
-						? `${compactNumber(context.tokens)}/${compactNumber(context.contextWindow)} ${percent === null ? "?" : `${percent.toFixed(0)}%`}`
-						: "?";
-					const contextColor: "success" | "warning" | "error" =
-						percent !== null && percent >= 90 ? "error" : percent !== null && percent >= 75 ? "warning" : "success";
+					const contextLabel = formatContextLabel(context, percent);
+					const contextColor = contextColorFor(percent);
 
 					const cwd = shortenHome(ctx.cwd);
 					const branch = footerData.getGitBranch();
@@ -97,9 +123,9 @@ export default function statusLine(pi: ExtensionAPI) {
 						theme.fg("syntaxNumber", `↑${compactNumber(usage.input)} ↓${compactNumber(usage.output)}`),
 						costPart,
 					].join(separator);
-					const statusPart = extensionStatuses.length > 0
-						? `${extensionStatuses.slice(0, 2).join(separator)}${extensionStatuses.length > 2 ? separator + theme.fg("dim", `+${extensionStatuses.length - 2}`) : ""}`
-						: "";
+					const statusPart = formatExtensionStatuses(extensionStatuses, separator, (text) =>
+						theme.fg("dim", text),
+					);
 					const right = [statusPart, modelPart].filter(Boolean).join(separator);
 					const full = right ? `${detailLeft}${separator}${right}${thinkingPart}` : `${detailLeft}${thinkingPart}`;
 

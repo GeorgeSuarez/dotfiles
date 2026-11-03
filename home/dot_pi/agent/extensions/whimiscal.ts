@@ -319,12 +319,12 @@ const messages = [
   "Hindley-Milnering...",
   "Lambda-lifting...",
   "Church-encoding...",
-  "Y-combinating...",
+  "Y-combinatoring...",
   "Zippering...",
   "Folding...",
   "Unfolding...",
   "Traversing...",
-  "Appling...",
+  "Applying...",
   "Bindifying...",
   "Kleisliing...",
   "Catamorphing...",
@@ -631,7 +631,8 @@ const messages = [
 ];
 
 function pickRandom(): string {
-  return messages[Math.floor(Math.random() * messages.length)]!;
+  const index = Math.floor(Math.random() * messages.length);
+  return messages[index] ?? "Working...";
 }
 
 export default function (pi: ExtensionAPI) {

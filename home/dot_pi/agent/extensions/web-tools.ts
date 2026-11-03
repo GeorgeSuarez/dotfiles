@@ -127,7 +127,12 @@ export function selectProvider(): Provider {
 function exaUrl(): string {
   const apiKey = process.env.EXA_API_KEY;
   if (!apiKey) return EXA_URL;
-  const url = new URL(EXA_URL);
+  let url: URL;
+  try {
+    url = new URL(EXA_URL);
+  } catch {
+    throw new Error(`EXA_URL is not a valid URL: ${EXA_URL}`);
+  }
   url.searchParams.set("exaApiKey", apiKey);
   return url.toString();
 }
@@ -138,28 +143,56 @@ function modelName(ctx: ExtensionContext): string | undefined {
   return model.id.slice(0, 100);
 }
 
+/** Exa search arguments; `contextMaxCharacters` is omitted when unset. */
+function exaSearchArguments(params: WebSearchParameters): {
+  query: string;
+  type: string;
+  numResults: number;
+  livecrawl: string;
+  contextMaxCharacters?: number;
+} {
+  const args: {
+    query: string;
+    type: string;
+    numResults: number;
+    livecrawl: string;
+    contextMaxCharacters?: number;
+  } = {
+    query: params.query,
+    type: params.type ?? "auto",
+    numResults: params.numResults ?? 8,
+    livecrawl: params.livecrawl ?? "fallback",
+  };
+  if (params.contextMaxCharacters !== undefined) {
+    args.contextMaxCharacters = params.contextMaxCharacters;
+  }
+  return args;
+}
+
+/** Parallel search arguments; `model_name` is omitted when pi reports no model. */
+function parallelSearchArguments(
+  params: WebSearchParameters,
+  ctx: ExtensionContext,
+): { objective: string; search_queries: string[]; session_id: string; model_name?: string } {
+  const args: { objective: string; search_queries: string[]; session_id: string; model_name?: string } = {
+    objective: params.query,
+    search_queries: [params.query],
+    session_id: ctx.sessionManager.getSessionId(),
+  };
+  const model = modelName(ctx);
+  if (model !== undefined) {
+    args.model_name = model;
+  }
+  return args;
+}
+
 function requestBody(
   provider: Provider,
   params: WebSearchParameters,
   ctx: ExtensionContext,
 ): string {
   const args =
-    provider === "exa"
-      ? {
-          query: params.query,
-          type: params.type ?? "auto",
-          numResults: params.numResults ?? 8,
-          livecrawl: params.livecrawl ?? "fallback",
-          ...(params.contextMaxCharacters === undefined
-            ? {}
-            : { contextMaxCharacters: params.contextMaxCharacters }),
-        }
-      : {
-          objective: params.query,
-          search_queries: [params.query],
-          session_id: ctx.sessionManager.getSessionId(),
-          ...(modelName(ctx) ? { model_name: modelName(ctx) } : {}),
-        };
+    provider === "exa" ? exaSearchArguments(params) : parallelSearchArguments(params, ctx);
 
   return JSON.stringify({
     jsonrpc: "2.0",
@@ -201,7 +234,13 @@ async function readBody(response: Response, signal: AbortSignal): Promise<string
 function payloadText(payload: string): string | undefined {
   const trimmed = payload.trim();
   if (!trimmed.startsWith("{")) return undefined;
-  const data = JSON.parse(trimmed) as McpPayload;
+  let data: McpPayload;
+  try {
+    data = JSON.parse(trimmed) as McpPayload;
+  } catch {
+    // Not a plain JSON-RPC body: the caller still has the SSE form to try.
+    return undefined;
+  }
   return data.result?.content?.find((item) => typeof item.text === "string" && item.text.length > 0)
     ?.text as string | undefined;
 }
@@ -308,7 +347,12 @@ async function readBounded(
 }
 
 function validateUrl(input: string): URL {
-  const url = new URL(input);
+  let url: URL;
+  try {
+    url = new URL(input);
+  } catch {
+    throw new Error(`Not a valid URL: ${input}`);
+  }
   if (url.protocol !== "http:" && url.protocol !== "https:") {
     throw new Error("Only HTTP and HTTPS URLs are supported");
   }

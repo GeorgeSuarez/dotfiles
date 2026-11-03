@@ -59,8 +59,13 @@ const ANSI_CUBE = [0, 95, 135, 175, 215, 255];
 
 function nearestCubeIndex(value: number): number {
   let closest = 0;
-  for (let i = 1; i < ANSI_CUBE.length; i++) {
-    if (Math.abs(ANSI_CUBE[i] - value) < Math.abs(ANSI_CUBE[closest] - value)) closest = i;
+  let closestDistance = Number.POSITIVE_INFINITY;
+  for (const [index, level] of ANSI_CUBE.entries()) {
+    const distance = Math.abs(level - value);
+    if (distance < closestDistance) {
+      closest = index;
+      closestDistance = distance;
+    }
   }
   return closest;
 }
@@ -121,13 +126,13 @@ export function getPiLogoRows(mode: LogoColorMode = "truecolor"): string[] {
   return rows;
 }
 
-/** Cap long lists so the header stays a fixed height. Pure for testing. */
-export const MAX_VISIBLE_ITEMS = 8;
+/** Cap long lists so the header stays a fixed height. */
+const MAX_VISIBLE_ITEMS = 8;
 
 /** "(n) a, b, c" or "(n) a, b +k more" when truncated. Pure for testing. */
 export function formatNameList(names: string[]): string {
   if (names.length === 0) return "none";
-  const sorted = [...names].sort();
+  const sorted = [...names].sort((a, b) => a.localeCompare(b));
   if (sorted.length <= MAX_VISIBLE_ITEMS) return `(${sorted.length}) ${sorted.join(", ")}`;
   const visible = sorted.slice(0, MAX_VISIBLE_ITEMS);
   return `(${sorted.length}) ${visible.join(", ")} +${sorted.length - visible.length} more`;
@@ -336,7 +341,8 @@ function scanExtensionPaths(cwd: string, agentDir = getAgentDir()): string[] {
   return found;
 }
 
-export function extensionDisplayName(extPath: string): string {
+/** Extension display name: the path's last segment. */
+function extensionDisplayName(extPath: string): string {
   const parts = extPath.replace(/\\/g, "/").split("/");
   const nm = parts.lastIndexOf("node_modules");
   const after = nm >= 0 ? parts[nm + 1] : undefined;
@@ -374,6 +380,20 @@ export function displayCwd(cwd: string): string {
   return shortenHome(cwd);
 }
 
+/**
+ * Agents column text: the live list when nothing was discovered on disk,
+ * "none" when the scan ran and found nothing, else the joined paths.
+ */
+function formatAgentsDisplay(
+  agentsPaths: string[] | undefined,
+  loadedAgents: string,
+  cwd: string,
+): string {
+  if (agentsPaths === undefined) return loadedAgents;
+  if (agentsPaths.length === 0) return "none";
+  return agentsPaths.map((path) => displayPath(path, cwd)).join(", ");
+}
+
 export interface LoadedInfo {
   model: string;
   cwdDir: string;
@@ -382,22 +402,6 @@ export interface LoadedInfo {
   agents: string;
   extensions: string;
 }
-
-/**
- * @deprecated Fixed palette kept for backwards-compat imports only.
- * The header now follows the active pi theme via `theme.fg`/`theme.bold`.
- */
-export const TOKYO_NIGHT = {
-  text: "#c0caf5",
-  blue: "#7aa2f7",
-  cyan: "#7dcfff",
-  green: "#9ece6a",
-  yellow: "#e0af68",
-  purple: "#bb9af7",
-  comment: "#565f89",
-  border: "#3b4261",
-  orange: "#ff9e64",
-} as const;
 
 let tableCache: { theme: Theme; key: string; lines: string[] } | undefined;
 
@@ -546,13 +550,10 @@ export default function startupHeader(pi: ExtensionAPI) {
     } catch {
       // ignore command source errors
     }
-    const extNames = Array.from(new Set([...extPaths].map(extensionDisplayName))).sort();
-    const agentsDisplay =
-      agentsPaths === undefined
-        ? loaded.agents
-        : agentsPaths.length === 0
-          ? "none"
-          : agentsPaths.map((p) => displayPath(p, cwd)).join(", ");
+    const extNames = Array.from(new Set([...extPaths].map(extensionDisplayName))).sort((a, b) =>
+      a.localeCompare(b),
+    );
+    const agentsDisplay = formatAgentsDisplay(agentsPaths, loaded.agents, cwd);
     loaded = {
       model: modelLabel || "no-model",
       cwdDir: displayCwd(cwd),
@@ -563,7 +564,7 @@ export default function startupHeader(pi: ExtensionAPI) {
     };
   }
 
-  pi.on("session_start", async (_event, ctx) => {
+  pi.on("session_start", (_event, ctx) => {
     if (ctx.mode !== "tui") return;
     const modelLabel = ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : "no-model";
     snapshot(scanAgentsFiles(ctx.cwd).map((f) => f.path), ctx.cwd, modelLabel, true);
@@ -588,7 +589,7 @@ export default function startupHeader(pi: ExtensionAPI) {
   }
 
   // MCP tools register asynchronously; refresh once the system prompt is built.
-  pi.on("before_agent_start", async (event, ctx) => {
+  pi.on("before_agent_start", (event, ctx) => {
     const cwd = event.systemPromptOptions?.cwd || ctx?.cwd || "";
     const modelLabel = ctx?.model ? `${ctx.model.provider}/${ctx.model.id}` : loaded.model;
     refreshFromSystemPrompt(event.systemPromptOptions?.contextFiles, cwd, modelLabel);
@@ -596,7 +597,7 @@ export default function startupHeader(pi: ExtensionAPI) {
 
   // MCP connections finish in the background after startup; refresh on the
   // first turns so the header converges to the live tool set.
-  pi.on("turn_start", async (_event, ctx) => {
+  pi.on("turn_start", (_event, ctx) => {
     if (!lastCwd && !ctx?.cwd) return;
     const cwd = ctx?.cwd || lastCwd;
     const modelLabel = ctx?.model ? `${ctx.model.provider}/${ctx.model.id}` : loaded.model;
@@ -606,7 +607,7 @@ export default function startupHeader(pi: ExtensionAPI) {
     requestRender?.();
   });
 
-  pi.on("model_select", async (event, _ctx) => {
+  pi.on("model_select", (event, _ctx) => {
     loaded = {
       ...loaded,
       model: event.model ? `${event.model.provider}/${event.model.id}` : loaded.model,

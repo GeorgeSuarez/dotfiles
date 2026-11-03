@@ -21,7 +21,12 @@ function configuredDomains(): string[] {
 
 function assertAllowed(urlText: string | undefined): void {
 	if (!urlText) return;
-	const url = new URL(urlText);
+	let url: URL;
+	try {
+		url = new URL(urlText);
+	} catch {
+		throw new Error(`Browser navigation blocked: not a valid URL: ${JSON.stringify(urlText)}`);
+	}
 	const allowed = configuredDomains();
 	if (allowed.length === 0) return;
 	const host = url.hostname.toLowerCase();
@@ -52,6 +57,9 @@ function argsFor(params: Params): string[] {
 			return params.text ? ["screenshot", params.text] : ["screenshot"];
 		case "url":
 			return ["get", "url"];
+		default:
+			// Typebox validates the enum, so this only guards a bad direct caller.
+			throw new Error(`Unsupported browser action: ${String(params.action)}`);
 	}
 }
 
