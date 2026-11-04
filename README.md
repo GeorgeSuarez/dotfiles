@@ -24,7 +24,7 @@ My macOS dotfiles, managed with [chezmoi](https://chezmoi.io).
 
 Excluded: `.ssh`, caches, logs, session history, machine-local files (see `~/.zshrc.local`).
 
-## Bootstrap a new machine (repo can live anywhere)
+## Bootstrap a new machine
 
 ```sh
 git clone https://github.com/GeorgeSuarez/dotfiles.git ~/.local/share/chezmoi
@@ -38,5 +38,3 @@ cd ~/.local/share/chezmoi && ./install.sh
 - Edit configs in place as usual.
 - `dotdiff` — review `chezmoi status` + `chezmoi diff` (live vs source).
 - `chezmoi re-add <file>` — pull a live change you intend to keep back into the source.
-- `sync-dotfiles` — review diff, then apply source -> live.
-- `push-dotfiles` — review `git status`, stage tracked changes, review cached diff, commit, push.
