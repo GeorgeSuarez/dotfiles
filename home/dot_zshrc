@@ -4,6 +4,10 @@ export ZSH="$HOME/.oh-my-zsh"
 # Must be set BEFORE sourcing oh-my-zsh.
 DISABLE_AUTO_TITLE="true"
 
+# Skips omz's security audit of completion dirs. Single-user Mac, brew-owned
+# paths — the check re-ran on every shell for ~6ms. Measured 65.6 -> 59.9ms.
+ZSH_DISABLE_COMPFIX=true
+
 # Dedupe PATH (keeps Docker/Maestro appends from duplicating on reload).
 typeset -U path PATH
 
@@ -28,6 +32,7 @@ source $ZSH/oh-my-zsh.sh
 HISTSIZE=50000
 SAVEHIST=50000
 setopt share_history hist_ignore_all_dups hist_reduce_blanks
+setopt extended_glob
 
 # export MANPATH="/usr/local/man:$MANPATH"
 export PATH="/usr/local/opt/python/libexec/bin:$PATH"
@@ -59,7 +64,26 @@ dotrepo() { cd "$(dirname "$(chezmoi source-path)")"; }
 alias dotdiff='chezmoi status && chezmoi diff'
 alias sync-dotfiles='chezmoi diff && chezmoi apply'
 
+# fzf — Ctrl-R history, Ctrl-T file insert, Alt-C cd.
+# Loaded on the first prompt, not at startup: fzf's --zsh script re-applies
+# `options=()` which cannot set `zle` in a `zsh -i -c` shell, and it costs 8.5ms
+# we do not need before the prompt exists.
+_fzf_load() {
+  add-zsh-hook -d precmd _fzf_load
+  command -v fzf >/dev/null 2>&1 && source <(fzf --zsh)
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook precmd _fzf_load
+
 # zsh-autosuggestions — Homebrew on macOS, OMZ custom plugin on Linux/WSL
+# Note: v0.7.1 already enables async fetching itself on zsh >= 5.0.8
+# (`typeset -g ZSH_AUTOSUGGEST_USE_ASYNC=` inside the plugin), so setting
+# ZSH_AUTOSUGGEST_USE_ASYNC here is pointless — the plugin's assignment wins.
+ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+# Suggestions stop past 16 characters. Each keystroke already repaints the line
+# once; past this limit the async response never fires, so long commands cost
+# one repaint instead of two (the second is the mid-typing caret hop).
+ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=16
 if [[ -f /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
   source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 elif [[ -f "$ZSH_CUSTOM/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then
@@ -67,6 +91,7 @@ elif [[ -f "$ZSH_CUSTOM/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh" ]];
 fi
 
 # zsh-syntax-highlighting — must load after autosuggestions
+ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets cursor line pattern)
 if [[ -f /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
   source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 elif [[ -f "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]]; then
@@ -119,4 +144,65 @@ if [[ -n "$WT_SESSION" ]] && command -v wslpath >/dev/null 2>&1; then
 fi
 
 # Starship prompt — must stay last so it can wrap precmd hooks set above.
-eval "$(starship init zsh)"
+# Rendered in a background worker: `starship prompt` forks `node --version`
+# (72ms) and `rustc --version` (39ms) inside matching projects, so a synchronous
+# prompt stalled every command in those trees. Measured blocking per prompt:
+# 72ms -> 0.1ms in a node project, 6.6ms -> 0.1ms elsewhere.
+# Set STARSHIP_SYNC=1 to opt out and use stock synchronous starship.
+autoload -Uz async 2>/dev/null && async 2>/dev/null
+if (( $+commands[starship] )) && (( $+functions[async_init] )) && [[ -z $STARSHIP_SYNC ]]; then
+  typeset -g _STARSHIP_RENDER=''
+  typeset -g _STARSHIP_BIN=${commands[starship]}
+  typeset -g _STARSHIP_CACHE="${TMPDIR:-/tmp}/starship-prompt.$$"
+
+  # Runs inside the worker. zsh-async jobs are *function names*, so this must be
+  # defined before the worker is forked; the worker also keeps its own cwd, so
+  # the directory is passed in ($5) and changed per job.
+  _starship_render() {
+    builtin cd -q -- "$5" 2>/dev/null || return 1
+    "$_STARSHIP_BIN" prompt --status="$1" --cmd-duration="$2" --terminal-width="$3" >| "$4"
+  }
+
+  async_init
+  async_start_worker starship_prompt -n
+  async_register_callback starship_prompt _starship_async_done
+
+  # The worker writes the prompt to a file and the callback reads it back;
+  # passing it through zsh-async would tokenise the powerline glyphs.
+  #
+  # Two repaint guards, both about the caret jumping while you type:
+  #   1. if the render is byte-identical to what is on screen, do nothing —
+  #      most prompts (same dir, clean tree, same versions) never change;
+  #   2. if you have started typing, skip the repaint entirely. PROMPT is read
+  #      at draw time, so the next prompt picks the new render up anyway.
+  _starship_async_done() {
+    local new=''
+    [[ -s $_STARSHIP_CACHE ]] && new=$(<$_STARSHIP_CACHE)
+    [[ -z $new || $new == $_STARSHIP_RENDER ]] && return
+    _STARSHIP_RENDER=$new
+    [[ -z $BUFFER && -z $PENDING ]] && zle && zle .reset-prompt
+  }
+
+  _starship_preexec() { _STARSHIP_CMD_START=$EPOCHREALTIME }
+
+  _starship_precmd() {
+    local st=$? dur=0
+    (( ${+_STARSHIP_CMD_START} )) && dur=$(( (EPOCHREALTIME - _STARSHIP_CMD_START) * 1000 ))
+    async_job starship_prompt _starship_render "$st" "${dur%.*}" "$COLUMNS" "$_STARSHIP_CACHE" "$PWD"
+  }
+
+  _starship_cleanup() { rm -f "$_STARSHIP_CACHE" }
+
+  autoload -Uz add-zsh-hook
+  add-zsh-hook preexec _starship_preexec
+  add-zsh-hook precmd _starship_precmd
+  add-zsh-hook zshexit _starship_cleanup
+
+  setopt PROMPT_SUBST
+  PROMPT='${_STARSHIP_RENDER}'
+  # Seed the first prompt so it is never blank (one synchronous render).
+  _STARSHIP_RENDER=$($_STARSHIP_BIN prompt --terminal-width=$COLUMNS)
+else
+  # Fallback: stock synchronous starship.
+  (( $+commands[starship] )) && eval "$(starship init zsh)"
+fi
