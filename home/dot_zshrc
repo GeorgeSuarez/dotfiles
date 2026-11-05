@@ -84,6 +84,13 @@ ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 # once; past this limit the async response never fires, so long commands cost
 # one repaint instead of two (the second is the mid-typing caret hop).
 ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=16
+# Accept a suggestion only with `→` (fish-style: main keymap's forward-char).
+# Dropped from the default list: end-of-line, vi-end-of-line, vi-add-eol.
+# `End`/`Ctrl-E` is a pure "move the caret" key for most of us, but the plugin
+# accepts the whole ghost whenever the caret already sits at end of line — that
+# is how `git comm(git): added git config file"⏎"` got spliced together and
+# committed to ~/.zsh_history. `→` still accepts deliberately.
+ZSH_AUTOSUGGEST_ACCEPT_WIDGETS=(forward-char vi-forward-char)
 if [[ -f /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
   source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 elif [[ -f "$ZSH_CUSTOM/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then
