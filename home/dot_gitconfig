@@ -2,37 +2,52 @@
 	name = George Suarez
 	email = georgesuarezdev@gmail.com
   signingKey = "~/.ssh/id_ed25519.pub"
+
 [branch]
   sort = "-committerdate"
+
 [gpg]
   format = "ssh"
+
 [column]
   ui = "auto" 
+  
 [color]
 	ui = auto
+
 [init]
 	defaultBranch = main
+
 [pull]
 	rebase = true
+
 [push]
 	autoSetupRemote = true
+
 [fetch]
 	prune = true
   writeCommitGraph = true
+
 [rerere]
 	enabled = true
+
 [core]
 	editor = nvim
   fsmonitor = true
+
 [merge]
 	conflictstyle = zdiff3
+
 [diff]
 	colorMoved = zebra
+
 [rebase]
   updateRefs = true
+
 [commit]
 	verbose = true
   gpgSign = true
+
 [credential "https://github.com"]
   helper = !/opt/homebrew/bin/gh auth git-credential
 [credential "https://gist.github.com"]  
