@@ -4,11 +4,11 @@
   "dependencies": {
     "@ff-labs/pi-fff": "^0.11.0",
     "@juicesharp/rpiv-ask-user-question": "^2.15.0",
-    "@narumitw/pi-btw": "^0.63.4",
+    "@narumitw/pi-btw": "^0.63.5",
     "@narumitw/pi-usage": "^0.69.2",
     "@nicknisi/pi-cloak": "^0.2.0",
-    "@plannotator/pi-extension": "^0.28.49",
-    "pi-lens": "^4.4.8"
+    "@plannotator/pi-extension": "^0.28.51",
+    "pi-lens": "^4.4.10"
   },
   "allowScripts": {
     "@ast-grep/cli@0.45.3": true,
