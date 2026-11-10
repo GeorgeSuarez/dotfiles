@@ -1,6 +1,7 @@
 .DS_Store
 *.log
 *.bak
+*.bak-*
 node_modules/
 
 home/dot_pi/agent/models-store.json
