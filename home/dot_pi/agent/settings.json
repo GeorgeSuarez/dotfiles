@@ -9,7 +9,8 @@
     "opencode-go/deepseek-v4.1-flash",
     "opencode-go/mimo-v2.6-flash",
     "opencode-go/gpt-6-luna",
-    "opencode-go/glm-5.3-flash"
+    "opencode-go/glm-5.3-flash",
+    "opencode-go/gemini-4-argon"
   ],
   "thinkingBudgets": {
     "minimal": 1024,
@@ -39,7 +40,7 @@
   "hideThinkingBlock": true,
   "extensionChangelogVersions": {
     "{\"source\":\"npm:pi-lens\",\"scope\":\"user\"}": "4.4.12",
-    "{\"source\":\"npm:@narumitw/pi-usage\",\"scope\":\"user\"}": "0.69.2",
+    "{\"source\":\"npm:@narumitw/pi-usage\",\"scope\":\"user\"}": "0.69.3",
     "{\"source\":\"npm:@narumitw/pi-btw\",\"scope\":\"user\"}": "0.63.6"
   },
   "terminal": {
