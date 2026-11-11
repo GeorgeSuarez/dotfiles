@@ -113,9 +113,7 @@ return {
                     Snacks.picker.lsp_workspace_symbols()
                 end, opts)
 
-                if client and client:supports_method("textDocument/inlayHint", ev.buf) then
-                    vim.lsp.inlay_hint.enable(true, { bufnr = ev.buf })
-                end
+                -- inlay hints stay off by default; toggle them per session with <leader>ih
             end,
         })
 

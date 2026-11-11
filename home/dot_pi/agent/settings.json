@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "1.5.1",
+  "lastChangelogVersion": "1.5.2",
   "theme": "dark",
   "defaultProvider": "opencode-go",
   "defaultModel": "deepseek-v4.1-flash",
@@ -28,10 +28,9 @@
     "npm:@nicknisi/pi-cloak",
     "npm:@plannotator/pi-extension",
     "npm:@ff-labs/pi-fff",
-    "npm:@narumitw/pi-usage",
-    "npm:@narumitw/pi-btw",
     "npm:pi-lens",
-    "npm:@juicesharp/rpiv-ask-user-question"
+    "npm:@juicesharp/rpiv-ask-user-question",
+    "npm:@narumitw/pi-usage"
   ],
   "enableInstallTelemetry": false,
   "quietStartup": true,
@@ -39,8 +38,11 @@
   "showCacheMissNotices": true,
   "hideThinkingBlock": true,
   "extensionChangelogVersions": {
-    "{\"source\":\"npm:pi-lens\",\"scope\":\"user\"}": "4.4.11",
+    "{\"source\":\"npm:pi-lens\",\"scope\":\"user\"}": "4.4.12",
     "{\"source\":\"npm:@narumitw/pi-usage\",\"scope\":\"user\"}": "0.69.2",
-    "{\"source\":\"npm:@narumitw/pi-btw\",\"scope\":\"user\"}": "0.63.5"
+    "{\"source\":\"npm:@narumitw/pi-btw\",\"scope\":\"user\"}": "0.63.6"
+  },
+  "terminal": {
+    "showTerminalProgress": true
   }
 }
