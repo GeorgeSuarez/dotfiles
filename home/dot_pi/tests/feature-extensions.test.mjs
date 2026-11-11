@@ -65,6 +65,7 @@ describe("action notifications", () => {
 			reply: process.env.PI_ACTION_REPLY,
 			fetch: globalThis.fetch,
 		};
+
 		const requests = [];
 		process.env.PI_ACTION_NOTIFICATIONS = "on";
 		process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = "hark";
@@ -72,6 +73,7 @@ describe("action notifications", () => {
 		process.env.PI_ACTION_REPLY = "off";
 		globalThis.fetch = async (url, init) => {
 			requests.push({ url, init });
+
 			return new Response(JSON.stringify({ ok: true, eventId: "evt_action", delivered: 1 }), { status: 200 });
 		};
 
@@ -82,6 +84,7 @@ describe("action notifications", () => {
 				registerCommand: () => {},
 				registerTool: () => {},
 			});
+
 			const ctx = {
 				hasUI: false,
 				mode: "json",
@@ -90,6 +93,7 @@ describe("action notifications", () => {
 					getLeafId: () => "leaf-1",
 				},
 			};
+
 			await handlers.get("message_end")({
 				message: {
 					role: "assistant",
@@ -105,10 +109,13 @@ describe("action notifications", () => {
 		} finally {
 			if (previousValues.enabled === undefined) delete process.env.PI_ACTION_NOTIFICATIONS;
 			else process.env.PI_ACTION_NOTIFICATIONS = previousValues.enabled;
+
 			if (previousValues.channel === undefined) delete process.env.PI_ACTION_NOTIFICATIONS_CHANNEL;
 			else process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = previousValues.channel;
+
 			if (previousValues.webhook === undefined) delete process.env.PI_HARK_WEBHOOK_URL;
 			else process.env.PI_HARK_WEBHOOK_URL = previousValues.webhook;
+
 			if (previousValues.reply === undefined) delete process.env.PI_ACTION_REPLY;
 			else process.env.PI_ACTION_REPLY = previousValues.reply;
 			globalThis.fetch = previousValues.fetch;
@@ -123,6 +130,7 @@ describe("action notifications", () => {
 			done: process.env.PI_HARK_DONE_SUMMARY,
 			fetch: globalThis.fetch,
 		};
+
 		const requests = [];
 		process.env.PI_ACTION_NOTIFICATIONS = "on";
 		process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = "hark";
@@ -130,6 +138,7 @@ describe("action notifications", () => {
 		delete process.env.PI_HARK_DONE_SUMMARY;
 		globalThis.fetch = async (url, init) => {
 			requests.push({ url, init });
+
 			return new Response(JSON.stringify({ ok: true, eventId: "evt_done", delivered: 1 }), { status: 200 });
 		};
 
@@ -140,6 +149,7 @@ describe("action notifications", () => {
 				registerCommand: () => {},
 				registerTool: () => {},
 			});
+
 			const ctx = {
 				hasUI: false,
 				mode: "json",
@@ -148,6 +158,7 @@ describe("action notifications", () => {
 					getLeafId: () => "leaf-1",
 				},
 			};
+
 			await handlers.get("message_end")({
 				message: {
 					role: "assistant",
@@ -163,10 +174,13 @@ describe("action notifications", () => {
 		} finally {
 			if (previousValues.enabled === undefined) delete process.env.PI_ACTION_NOTIFICATIONS;
 			else process.env.PI_ACTION_NOTIFICATIONS = previousValues.enabled;
+
 			if (previousValues.channel === undefined) delete process.env.PI_ACTION_NOTIFICATIONS_CHANNEL;
 			else process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = previousValues.channel;
+
 			if (previousValues.webhook === undefined) delete process.env.PI_HARK_WEBHOOK_URL;
 			else process.env.PI_HARK_WEBHOOK_URL = previousValues.webhook;
+
 			if (previousValues.done === undefined) delete process.env.PI_HARK_DONE_SUMMARY;
 			else process.env.PI_HARK_DONE_SUMMARY = previousValues.done;
 			globalThis.fetch = previousValues.fetch;
@@ -181,6 +195,7 @@ describe("action notifications", () => {
 			done: process.env.PI_HARK_DONE_SUMMARY,
 			fetch: globalThis.fetch,
 		};
+
 		const requests = [];
 		process.env.PI_ACTION_NOTIFICATIONS = "on";
 		process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = "hark";
@@ -188,6 +203,7 @@ describe("action notifications", () => {
 		process.env.PI_HARK_DONE_SUMMARY = "off";
 		globalThis.fetch = async (url, init) => {
 			requests.push({ url, init });
+
 			return new Response(JSON.stringify({ ok: true, eventId: "evt_done", delivered: 1 }), { status: 200 });
 		};
 
@@ -198,6 +214,7 @@ describe("action notifications", () => {
 				registerCommand: () => {},
 				registerTool: () => {},
 			});
+
 			const ctx = {
 				hasUI: false,
 				mode: "json",
@@ -206,6 +223,7 @@ describe("action notifications", () => {
 					getLeafId: () => "leaf-1",
 				},
 			};
+
 			await handlers.get("message_end")({
 				message: {
 					role: "assistant",
@@ -218,10 +236,13 @@ describe("action notifications", () => {
 		} finally {
 			if (previousValues.enabled === undefined) delete process.env.PI_ACTION_NOTIFICATIONS;
 			else process.env.PI_ACTION_NOTIFICATIONS = previousValues.enabled;
+
 			if (previousValues.channel === undefined) delete process.env.PI_ACTION_NOTIFICATIONS_CHANNEL;
 			else process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = previousValues.channel;
+
 			if (previousValues.webhook === undefined) delete process.env.PI_HARK_WEBHOOK_URL;
 			else process.env.PI_HARK_WEBHOOK_URL = previousValues.webhook;
+
 			if (previousValues.done === undefined) delete process.env.PI_HARK_DONE_SUMMARY;
 			else process.env.PI_HARK_DONE_SUMMARY = previousValues.done;
 			globalThis.fetch = previousValues.fetch;
@@ -236,6 +257,7 @@ describe("action notifications", () => {
 			if (init.method === "POST" && url.endsWith("/hooks/test-token")) {
 				return new Response(JSON.stringify({ ok: true, eventId: "evt_question", delivered: 1 }), { status: 200 });
 			}
+
 			return new Response(JSON.stringify({
 				ok: true,
 				event: { id: "evt_question", response: { status: "approved", action: "approve", text: null } },
@@ -249,6 +271,7 @@ describe("action notifications", () => {
 				registerCommand: () => {},
 				registerTool: (value) => { tool = value; },
 			});
+
 			const result = await tool.execute(
 				"call-1",
 				{ question: "Deploy this commit?", responseType: "approval", timeoutSeconds: 30 },
@@ -256,6 +279,7 @@ describe("action notifications", () => {
 				undefined,
 				{ sessionManager: { getSessionId: () => "session-1" } },
 			);
+
 			expect(result.content[0].text).toBe("User response: approved (approve)");
 			expect(result.details).toMatchObject({ status: "approved", action: "approve" });
 		} finally {
@@ -273,6 +297,7 @@ describe("action notifications", () => {
 			reply: process.env.PI_ACTION_REPLY,
 			fetch: globalThis.fetch,
 		};
+
 		const requests = [];
 		const sent = [];
 		process.env.PI_ACTION_NOTIFICATIONS = "on";
@@ -281,9 +306,11 @@ describe("action notifications", () => {
 		delete process.env.PI_ACTION_REPLY;
 		globalThis.fetch = async (url, init) => {
 			requests.push({ url, init });
+
 			if (init.method === "POST") {
 				return new Response(JSON.stringify({ ok: true, eventId: "evt_reply", delivered: 1 }), { status: 200 });
 			}
+
 			return new Response(JSON.stringify({
 				ok: true,
 				event: { id: "evt_reply", response: { status: "yes", action: "yes", text: null } },
@@ -298,11 +325,13 @@ describe("action notifications", () => {
 				registerTool: () => {},
 				sendUserMessage: (content, options) => { sent.push({ content, options }); },
 			});
+
 			const ctx = {
 				hasUI: false,
 				mode: "json",
 				sessionManager: { getSessionId: () => "session-1", getLeafId: () => "leaf-1" },
 			};
+
 			await handlers.get("message_end")({
 				message: { role: "assistant", content: [{ type: "text", text: "Is the build green?" }] },
 			}, ctx);
@@ -322,10 +351,13 @@ describe("action notifications", () => {
 		} finally {
 			if (previousValues.enabled === undefined) delete process.env.PI_ACTION_NOTIFICATIONS;
 			else process.env.PI_ACTION_NOTIFICATIONS = previousValues.enabled;
+
 			if (previousValues.channel === undefined) delete process.env.PI_ACTION_NOTIFICATIONS_CHANNEL;
 			else process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = previousValues.channel;
+
 			if (previousValues.webhook === undefined) delete process.env.PI_HARK_WEBHOOK_URL;
 			else process.env.PI_HARK_WEBHOOK_URL = previousValues.webhook;
+
 			if (previousValues.reply === undefined) delete process.env.PI_ACTION_REPLY;
 			else process.env.PI_ACTION_REPLY = previousValues.reply;
 			globalThis.fetch = previousValues.fetch;
@@ -346,9 +378,11 @@ describe("action notifications", () => {
 		let readStatus = "approved";
 		globalThis.fetch = async (url, init) => {
 			requests.push({ url, init });
+
 			if (init.method === "POST") {
 				return new Response(JSON.stringify({ ok: true, eventId: "evt_x", delivered: 1 }), { status: 200 });
 			}
+
 			return new Response(JSON.stringify({
 				ok: true,
 				event: { id: "evt_x", response: { status: readStatus, action: "approve", text: null } },
@@ -363,6 +397,7 @@ describe("action notifications", () => {
 				registerTool: () => {},
 				sendUserMessage: (content, options) => { sent.push({ content, options }); },
 			});
+
 			const ctx = {
 				hasUI: false,
 				mode: "json",
@@ -388,10 +423,13 @@ describe("action notifications", () => {
 			expect(sent).toHaveLength(0);
 		} finally {
 			globalThis.fetch = previousFetch;
+
 			if (previousWebhook === undefined) delete process.env.PI_HARK_WEBHOOK_URL;
 			else process.env.PI_HARK_WEBHOOK_URL = previousWebhook;
+
 			if (previousChannel === undefined) delete process.env.PI_ACTION_NOTIFICATIONS_CHANNEL;
 			else process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = previousChannel;
+
 			if (previousEnabled === undefined) delete process.env.PI_ACTION_NOTIFICATIONS;
 			else process.env.PI_ACTION_NOTIFICATIONS = previousEnabled;
 		}
@@ -410,9 +448,11 @@ describe("action notifications", () => {
 		const sent = [];
 		globalThis.fetch = async (url, init) => {
 			requests.push({ url, init });
+
 			if (init.method === "POST" && JSON.parse(init.body).response) {
 				return new Response(JSON.stringify({ error: "Interactive responses require Hark Pro" }), { status: 402 });
 			}
+
 			return new Response(JSON.stringify({ ok: true, eventId: "evt_1", delivered: 1 }), { status: 200 });
 		};
 
@@ -424,11 +464,13 @@ describe("action notifications", () => {
 				registerTool: () => {},
 				sendUserMessage: (content, options) => { sent.push({ content, options }); },
 			});
+
 			const ctx = {
 				hasUI: false,
 				mode: "json",
 				sessionManager: { getSessionId: () => "session-1", getLeafId: () => "leaf-1" },
 			};
+
 			await handlers.get("message_end")({
 				message: { role: "assistant", content: [{ type: "text", text: "Is the build green?" }] },
 			}, ctx);
@@ -441,10 +483,13 @@ describe("action notifications", () => {
 			expect(sent).toHaveLength(0);
 		} finally {
 			globalThis.fetch = previousFetch;
+
 			if (previousWebhook === undefined) delete process.env.PI_HARK_WEBHOOK_URL;
 			else process.env.PI_HARK_WEBHOOK_URL = previousWebhook;
+
 			if (previousChannel === undefined) delete process.env.PI_ACTION_NOTIFICATIONS_CHANNEL;
 			else process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = previousChannel;
+
 			if (previousEnabled === undefined) delete process.env.PI_ACTION_NOTIFICATIONS;
 			else process.env.PI_ACTION_NOTIFICATIONS = previousEnabled;
 		}
@@ -461,6 +506,7 @@ describe("action notifications", () => {
 
 	test("parses Hark verbosity levels", () => {
 		const previousVerbosity = process.env.PI_HARK_VERBOSITY;
+
 		try {
 			delete process.env.PI_HARK_VERBOSITY;
 			setHarkVerbosityOverride(undefined);
@@ -488,6 +534,7 @@ describe("action notifications", () => {
 			expect(harkVerbosity()).toBe("errors");
 		} finally {
 			setHarkVerbosityOverride(undefined);
+
 			if (previousVerbosity === undefined) delete process.env.PI_HARK_VERBOSITY;
 			else process.env.PI_HARK_VERBOSITY = previousVerbosity;
 		}
@@ -512,6 +559,7 @@ describe("action notifications", () => {
 			live: process.env.PI_HARK_LIVE_ACTIVITY,
 			fetch: globalThis.fetch,
 		};
+
 		const requests = [];
 		process.env.PI_ACTION_NOTIFICATIONS = "on";
 		process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = "hark";
@@ -520,6 +568,7 @@ describe("action notifications", () => {
 		delete process.env.PI_HARK_LIVE_ACTIVITY;
 		globalThis.fetch = async (url, init) => {
 			requests.push({ url, init });
+
 			return new Response(JSON.stringify({ ok: true, eventId: "evt_lifecycle", delivered: 1 }), { status: 200 });
 		};
 
@@ -530,12 +579,14 @@ describe("action notifications", () => {
 				registerCommand: () => {},
 				registerTool: () => {},
 			});
+
 			const ctx = {
 				hasUI: false,
 				mode: "json",
 				cwd: "/Users/tester/my-project",
 				sessionManager: { getSessionId: () => "session-1", getLeafId: () => "leaf-1" },
 			};
+
 			await handlers.get("agent_start")({}, ctx);
 			await handlers.get("agent_settled")({}, ctx);
 
@@ -546,12 +597,16 @@ describe("action notifications", () => {
 		} finally {
 			if (previousValues.enabled === undefined) delete process.env.PI_ACTION_NOTIFICATIONS;
 			else process.env.PI_ACTION_NOTIFICATIONS = previousValues.enabled;
+
 			if (previousValues.channel === undefined) delete process.env.PI_ACTION_NOTIFICATIONS_CHANNEL;
 			else process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = previousValues.channel;
+
 			if (previousValues.webhook === undefined) delete process.env.PI_HARK_WEBHOOK_URL;
 			else process.env.PI_HARK_WEBHOOK_URL = previousValues.webhook;
+
 			if (previousValues.verbosity === undefined) delete process.env.PI_HARK_VERBOSITY;
 			else process.env.PI_HARK_VERBOSITY = previousValues.verbosity;
+
 			if (previousValues.live === undefined) delete process.env.PI_HARK_LIVE_ACTIVITY;
 			else process.env.PI_HARK_LIVE_ACTIVITY = previousValues.live;
 			globalThis.fetch = previousValues.fetch;
@@ -567,6 +622,7 @@ describe("action notifications", () => {
 			live: process.env.PI_HARK_LIVE_ACTIVITY,
 			fetch: globalThis.fetch,
 		};
+
 		const requests = [];
 		delete process.env.PI_HARK_VERBOSITY;
 		delete process.env.PI_HARK_LIVE_ACTIVITY;
@@ -575,6 +631,7 @@ describe("action notifications", () => {
 		process.env.PI_HARK_WEBHOOK_URL = "https://hark.ryan.ceo/hooks/test-token";
 		globalThis.fetch = async (url, init) => {
 			requests.push({ url, init });
+
 			return new Response(JSON.stringify({ ok: true, eventId: "evt_x", delivered: 1 }), { status: 200 });
 		};
 
@@ -585,23 +642,29 @@ describe("action notifications", () => {
 				registerCommand: () => {},
 				registerTool: () => {},
 			});
+
 			const ctx = {
 				hasUI: false,
 				mode: "json",
 				sessionManager: { getSessionId: () => "session-1", getLeafId: () => "leaf-1" },
 			};
+
 			await handlers.get("agent_start")({}, ctx);
 			await handlers.get("agent_settled")({}, ctx);
 			expect(requests).toHaveLength(0);
 		} finally {
 			if (previousValues.enabled === undefined) delete process.env.PI_ACTION_NOTIFICATIONS;
 			else process.env.PI_ACTION_NOTIFICATIONS = previousValues.enabled;
+
 			if (previousValues.channel === undefined) delete process.env.PI_ACTION_NOTIFICATIONS_CHANNEL;
 			else process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = previousValues.channel;
+
 			if (previousValues.webhook === undefined) delete process.env.PI_HARK_WEBHOOK_URL;
 			else process.env.PI_HARK_WEBHOOK_URL = previousValues.webhook;
+
 			if (previousValues.verbosity === undefined) delete process.env.PI_HARK_VERBOSITY;
 			else process.env.PI_HARK_VERBOSITY = previousValues.verbosity;
+
 			if (previousValues.live === undefined) delete process.env.PI_HARK_LIVE_ACTIVITY;
 			else process.env.PI_HARK_LIVE_ACTIVITY = previousValues.live;
 			globalThis.fetch = previousValues.fetch;
@@ -616,12 +679,14 @@ describe("action notifications", () => {
 			verbosity: process.env.PI_HARK_VERBOSITY,
 			fetch: globalThis.fetch,
 		};
+
 		const requests = [];
 		process.env.PI_ACTION_NOTIFICATIONS = "on";
 		process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = "hark";
 		process.env.PI_HARK_WEBHOOK_URL = "https://hark.ryan.ceo/hooks/test-token";
 		globalThis.fetch = async (url, init) => {
 			requests.push({ url, init });
+
 			return new Response(JSON.stringify({ ok: true, eventId: "evt_err", delivered: 1 }), { status: 200 });
 		};
 
@@ -632,6 +697,7 @@ describe("action notifications", () => {
 				registerCommand: () => {},
 				registerTool: () => {},
 			});
+
 			const ctx = {
 				hasUI: false,
 				mode: "json",
@@ -654,8 +720,10 @@ describe("action notifications", () => {
 		} finally {
 			if (previousValues.channel === undefined) delete process.env.PI_ACTION_NOTIFICATIONS_CHANNEL;
 			else process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = previousValues.channel;
+
 			if (previousValues.webhook === undefined) delete process.env.PI_HARK_WEBHOOK_URL;
 			else process.env.PI_HARK_WEBHOOK_URL = previousValues.webhook;
+
 			if (previousValues.verbosity === undefined) delete process.env.PI_HARK_VERBOSITY;
 			else process.env.PI_HARK_VERBOSITY = previousValues.verbosity;
 			globalThis.fetch = previousValues.fetch;
@@ -671,6 +739,7 @@ describe("action notifications", () => {
 			reply: process.env.PI_ACTION_REPLY,
 			fetch: globalThis.fetch,
 		};
+
 		const requests = [];
 		process.env.PI_ACTION_NOTIFICATIONS = "on";
 		process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = "hark";
@@ -679,6 +748,7 @@ describe("action notifications", () => {
 		process.env.PI_ACTION_REPLY = "off";
 		globalThis.fetch = async (url, init) => {
 			requests.push({ url, init });
+
 			return new Response(JSON.stringify({ ok: true, eventId: "evt_1", delivered: 1 }), { status: 200 });
 		};
 
@@ -689,11 +759,13 @@ describe("action notifications", () => {
 				registerCommand: () => {},
 				registerTool: () => {},
 			});
+
 			const ctx = {
 				hasUI: false,
 				mode: "json",
 				sessionManager: { getSessionId: () => "session-1", getLeafId: () => "leaf-1" },
 			};
+
 			await handlers.get("message_end")({
 				message: {
 					role: "assistant",
@@ -708,12 +780,16 @@ describe("action notifications", () => {
 		} finally {
 			if (previousValues.enabled === undefined) delete process.env.PI_ACTION_NOTIFICATIONS;
 			else process.env.PI_ACTION_NOTIFICATIONS = previousValues.enabled;
+
 			if (previousValues.channel === undefined) delete process.env.PI_ACTION_NOTIFICATIONS_CHANNEL;
 			else process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = previousValues.channel;
+
 			if (previousValues.webhook === undefined) delete process.env.PI_HARK_WEBHOOK_URL;
 			else process.env.PI_HARK_WEBHOOK_URL = previousValues.webhook;
+
 			if (previousValues.verbosity === undefined) delete process.env.PI_HARK_VERBOSITY;
 			else process.env.PI_HARK_VERBOSITY = previousValues.verbosity;
+
 			if (previousValues.reply === undefined) delete process.env.PI_ACTION_REPLY;
 			else process.env.PI_ACTION_REPLY = previousValues.reply;
 			globalThis.fetch = previousValues.fetch;
@@ -724,6 +800,7 @@ describe("action notifications", () => {
 		const previousVerbosity = process.env.PI_HARK_VERBOSITY;
 		delete process.env.PI_HARK_VERBOSITY;
 		const notices = [];
+
 		try {
 			const commands = new Map();
 			actionNotifications({
@@ -742,6 +819,7 @@ describe("action notifications", () => {
 			expect(notices[notices.length - 1]).toContain("Usage");
 		} finally {
 			setHarkVerbosityOverride(undefined);
+
 			if (previousVerbosity === undefined) delete process.env.PI_HARK_VERBOSITY;
 			else process.env.PI_HARK_VERBOSITY = previousVerbosity;
 		}
@@ -753,6 +831,7 @@ describe("action notifications", () => {
 		const tools = new Map();
 		const previousWebhook = process.env.PI_HARK_WEBHOOK_URL;
 		process.env.PI_HARK_WEBHOOK_URL = "https://hark.ryan.ceo/hooks/test-token";
+
 		try {
 			actionNotifications({
 				on: (event, handler) => handlers.set(event, handler),
@@ -763,6 +842,7 @@ describe("action notifications", () => {
 			if (previousWebhook === undefined) delete process.env.PI_HARK_WEBHOOK_URL;
 			else process.env.PI_HARK_WEBHOOK_URL = previousWebhook;
 		}
+
 		expect(commands.has("action-notifications")).toBe(true);
 		expect(tools.has("ask_user_on_iphone")).toBe(true);
 		expect(handlers.has("before_agent_start")).toBe(true);
@@ -774,6 +854,7 @@ describe("action notifications", () => {
 		const previousEnabled = process.env.PI_ACTION_NOTIFICATIONS;
 		delete process.env.PI_ACTION_NOTIFICATIONS;
 		const notices = [];
+
 		try {
 			const handlers = new Map();
 			const commands = new Map();
@@ -803,10 +884,12 @@ describe("action notifications", () => {
 describe("Hark client", () => {
 	test("sends a bounded notification with an idempotency key", async () => {
 		const requests = [];
+
 		const client = createHarkClient({
 			webhookUrl: "https://hark.ryan.ceo/hooks/test-token",
 			fetchImpl: async (url, init) => {
 				requests.push({ url, init });
+
 				return new Response(JSON.stringify({ ok: true, eventId: "evt_1", delivered: 1 }), {
 					status: 200,
 					headers: { "Content-Type": "application/json" },
@@ -815,6 +898,7 @@ describe("Hark client", () => {
 		});
 
 		expect(client).toBeDefined();
+
 		const result = await client.send(
 			{ title: "Pi", body: "Action required", summary: "Action required" },
 			{ idempotencyKey: "pi-action:test" },
@@ -833,16 +917,19 @@ describe("Hark client", () => {
 
 	test("reads an interactive response and can cancel it", async () => {
 		const urls = [];
+
 		const client = createHarkClient({
 			webhookUrl: "https://hark.ryan.ceo/hooks/test-token",
 			fetchImpl: async (url) => {
 				urls.push(url);
+
 				if (url.endsWith("/events/evt_2")) {
 					return new Response(JSON.stringify({
 						ok: true,
 						event: { id: "evt_2", response: { status: "approved", action: "approve", text: null } },
 					}), { status: 200 });
 				}
+
 				return new Response(JSON.stringify({ ok: true }), { status: 200 });
 			},
 		});
@@ -860,6 +947,7 @@ describe("Hark client", () => {
 describe("live activities", () => {
 	test("parses the enabled flag", () => {
 		const previous = process.env.PI_HARK_LIVE_ACTIVITY;
+
 		try {
 			delete process.env.PI_HARK_LIVE_ACTIVITY;
 			expect(liveActivityEnabled()).toBe(false);
@@ -875,16 +963,20 @@ describe("live activities", () => {
 
 	test("drives start, update, and end routes", async () => {
 		const requests = [];
+
 		const client = createActivityClient({
 			webhookUrl: "https://hark.ryan.ceo/hooks/test-token",
 			fetchImpl: async (url, init) => {
 				requests.push({ url, init });
+
 				if (init.method === "POST" && url.endsWith("/live-activities")) {
 					return new Response(JSON.stringify({ ok: true, activityId: "act_1", accepted: 1, sequence: 0 }), { status: 201 });
 				}
+
 				if (init.method === "PATCH") {
 					return new Response(JSON.stringify({ ok: true, sequence: 3 }), { status: 200 });
 				}
+
 				return new Response(JSON.stringify({ ok: true }), { status: 200 });
 			},
 		});
@@ -893,6 +985,7 @@ describe("live activities", () => {
 			{ title: "Pi", status: "Running", style: "terminal", key: "pi-run:s:l", replace: true },
 			{ idempotencyKey: "pi-run:s:l:start" },
 		);
+
 		expect(started).toMatchObject({ activityId: "act_1", accepted: 1 });
 		expect(requests[0].url).toBe("https://hark.ryan.ceo/hooks/test-token/live-activities");
 		expect(requests[0].init.headers["Idempotency-Key"]).toBe("pi-run:s:l:start");
@@ -920,6 +1013,7 @@ describe("live activities", () => {
 			reply: process.env.PI_ACTION_REPLY,
 			fetch: globalThis.fetch,
 		};
+
 		process.env.PI_HARK_LIVE_ACTIVITY = "on";
 		process.env.PI_HARK_WEBHOOK_URL = "https://hark.ryan.ceo/hooks/test-token";
 		process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = "terminal";
@@ -927,9 +1021,11 @@ describe("live activities", () => {
 		const requests = [];
 		globalThis.fetch = async (url, init) => {
 			requests.push({ url, init });
+
 			if (init.method === "POST" && url.endsWith("/live-activities")) {
 				return new Response(JSON.stringify({ ok: true, activityId: "act_7", accepted: 1 }), { status: 201 });
 			}
+
 			return new Response(JSON.stringify({ ok: true, sequence: 1 }), { status: 200 });
 		};
 
@@ -941,12 +1037,14 @@ describe("live activities", () => {
 				registerTool: () => {},
 				sendUserMessage: () => {},
 			});
+
 			const ctx = {
 				hasUI: false,
 				mode: "json",
 				cwd: "/Users/x/TrailFinder",
 				sessionManager: { getSessionId: () => "s", getLeafId: () => "l" },
 			};
+
 			await handlers.get("agent_start")({}, ctx);
 			// Handlers fire-and-forget the tracker; drain microtasks before asserting.
 			await new Promise((resolve) => setTimeout(resolve, 0));
@@ -976,10 +1074,13 @@ describe("live activities", () => {
 		} finally {
 			if (previous.live === undefined) delete process.env.PI_HARK_LIVE_ACTIVITY;
 			else process.env.PI_HARK_LIVE_ACTIVITY = previous.live;
+
 			if (previous.webhook === undefined) delete process.env.PI_HARK_WEBHOOK_URL;
 			else process.env.PI_HARK_WEBHOOK_URL = previous.webhook;
+
 			if (previous.channel === undefined) delete process.env.PI_ACTION_NOTIFICATIONS_CHANNEL;
 			else process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = previous.channel;
+
 			if (previous.reply === undefined) delete process.env.PI_ACTION_REPLY;
 			else process.env.PI_ACTION_REPLY = previous.reply;
 			globalThis.fetch = previous.fetch;
@@ -997,6 +1098,7 @@ describe("live activities", () => {
 		const requests = [];
 		globalThis.fetch = async (url, init) => {
 			requests.push({ url, init });
+
 			return new Response(JSON.stringify({ ok: true, activityId: "act_9", accepted: 0 }), { status: 201 });
 		};
 
@@ -1008,12 +1110,14 @@ describe("live activities", () => {
 				registerTool: () => {},
 				sendUserMessage: () => {},
 			});
+
 			const ctx = {
 				hasUI: false,
 				mode: "json",
 				cwd: "/repo",
 				sessionManager: { getSessionId: () => "s", getLeafId: () => "l" },
 			};
+
 			await handlers.get("agent_start")({}, ctx);
 			await new Promise((resolve) => setTimeout(resolve, 0));
 			await handlers.get("tool_execution_start")({ toolCallId: "1", toolName: "bash", args: {} }, ctx);
@@ -1025,10 +1129,13 @@ describe("live activities", () => {
 			expect(requests).toHaveLength(1);
 		} finally {
 			globalThis.fetch = previousFetch;
+
 			if (previousLive === undefined) delete process.env.PI_HARK_LIVE_ACTIVITY;
 			else process.env.PI_HARK_LIVE_ACTIVITY = previousLive;
+
 			if (previousWebhook === undefined) delete process.env.PI_HARK_WEBHOOK_URL;
 			else process.env.PI_HARK_WEBHOOK_URL = previousWebhook;
+
 			if (previousChannel === undefined) delete process.env.PI_ACTION_NOTIFICATIONS_CHANNEL;
 			else process.env.PI_ACTION_NOTIFICATIONS_CHANNEL = previousChannel;
 		}

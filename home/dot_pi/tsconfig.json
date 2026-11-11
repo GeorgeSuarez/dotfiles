@@ -27,5 +27,10 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
-  }
+  },
+  "exclude": [
+    "node_modules",
+    "agent/extensions/subagent",
+    "tools/oxlint/anti-slop"
+  ]
 }

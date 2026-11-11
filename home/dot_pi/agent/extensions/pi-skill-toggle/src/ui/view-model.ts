@@ -25,9 +25,12 @@ export function skillSearchText(skill: SkillRecord): string {
 
 export function filterSkills(skills: SkillRecord[], query: string): SkillRecord[] {
   const tokens = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+
   if (tokens.length === 0) return skills;
+
   return skills.filter((skill) => {
     const haystack = skillSearchText(skill);
+
     return tokens.every((token) => haystack.includes(token));
   });
 }

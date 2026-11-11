@@ -1,13 +1,9 @@
 import { basename, dirname } from "node:path";
-import type { FrontmatterDocument, FrontmatterScalarValue, SkillDiagnostic } from "../types.ts";
+import type { FrontmatterDocument, FrontmatterScalarValue, SkillDiagnostic, SkillMetadata } from "../types.ts";
 
 const FRONTMATTER_KEY_RE = /^([A-Za-z0-9_-]+)\s*:/;
 
-export function deriveSkillMetadata(filePath: string, doc: FrontmatterDocument): {
-  name: string;
-  description: string;
-  diagnostics: SkillDiagnostic[];
-} {
+export function deriveSkillMetadata(filePath: string, doc: FrontmatterDocument): SkillMetadata {
   const diagnostics: SkillDiagnostic[] = [];
   const parentDirName = basename(dirname(filePath));
   const name = stringField(doc.fields.name) || parentDirName;
@@ -18,6 +14,7 @@ export function deriveSkillMetadata(filePath: string, doc: FrontmatterDocument):
   }
 
   const duplicateKeys = getDuplicateFrontmatterKeys(doc);
+
   if (duplicateKeys.length > 0) {
     diagnostics.push({
       severity: "warning",
@@ -28,6 +25,7 @@ export function deriveSkillMetadata(filePath: string, doc: FrontmatterDocument):
   if (!description) {
     diagnostics.push({ severity: "error", message: "Missing required description; Pi will not load this skill" });
   }
+
   if (name !== parentDirName && basename(filePath) === "SKILL.md") {
     diagnostics.push({ severity: "warning", message: `Name does not match parent directory (${parentDirName})` });
   }
@@ -44,20 +42,26 @@ export function hasDuplicateDisableModelInvocation(doc: FrontmatterDocument): bo
 }
 
 export function getDuplicateFrontmatterKeys(doc: FrontmatterDocument): string[] {
-  return [...getTopLevelFrontmatterKeyCounts(doc)]
-    .filter(([, count]) => count > 1)
-    .map(([key]) => key)
-    .sort((a, b) => a.localeCompare(b));
+  const duplicates: string[] = [];
+
+  for (const [key, count] of getTopLevelFrontmatterKeyCounts(doc)) {
+    if (count > 1) duplicates.push(key);
+  }
+
+  return duplicates.sort((a, b) => a.localeCompare(b));
 }
 
 function getTopLevelFrontmatterKeyCounts(doc: FrontmatterDocument): Map<string, number> {
   const counts = new Map<string, number>();
+
   if (!doc.hasFrontmatter) return counts;
 
   for (const rawLine of doc.frontmatterText.split(/\r?\n/)) {
     const trimmed = rawLine.trim();
+
     if (!trimmed || trimmed.startsWith("#")) continue;
     const match = FRONTMATTER_KEY_RE.exec(rawLine);
+
     if (!match?.[1]) continue;
     counts.set(match[1], (counts.get(match[1]) ?? 0) + 1);
   }
@@ -66,5 +70,7 @@ function getTopLevelFrontmatterKeyCounts(doc: FrontmatterDocument): Map<string, 
 }
 
 function stringField(value: FrontmatterScalarValue | undefined): string {
-  return typeof value === "string" ? value.trim() : "";
+  if (value === undefined || value === null || value === true || value === false) return "";
+
+  return value.trim();
 }

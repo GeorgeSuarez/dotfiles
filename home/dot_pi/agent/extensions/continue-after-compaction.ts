@@ -54,6 +54,7 @@ export default function continueAfterCompaction(pi: ExtensionAPI): void {
     for (const timer of pendingTimers) {
       clearTimeout(timer);
     }
+
     pendingTimers.clear();
   });
 }

@@ -36,9 +36,10 @@ function normalizeToolPath(path: string): string {
   return path.replace(/^@/, "").replaceAll("\\", "/");
 }
 
-function isProtectedPath(path: unknown): boolean {
-  if (typeof path !== "string") return false;
+function isProtectedPath(path: string | undefined): boolean {
+  if (path === undefined) return false;
   const normalized = normalizeToolPath(path);
+
   return normalized.split("/").at(-1) === PROTECTED_FILE;
 }
 
@@ -55,6 +56,7 @@ function tokenizeShellCommand(command: string): string[] {
 
   for (let index = 0; index < command.length; index += 1) {
     const character = command[index];
+
     if (character === undefined) continue;
 
     if (quote !== undefined) {
@@ -76,6 +78,7 @@ function tokenizeShellCommand(command: string): string[] {
 
     if (/\s/.test(character)) {
       pushToken();
+
       if (character === "\n") tokens.push(character);
       continue;
     }
@@ -83,12 +86,14 @@ function tokenizeShellCommand(command: string): string[] {
     if (/[;&|<>]/.test(character)) {
       pushToken();
       const pair = character + (command[index + 1] ?? "");
+
       if (["&&", "||", ">>", "<<"].includes(pair)) {
         tokens.push(pair);
         index += 1;
       } else {
         tokens.push(character);
       }
+
       continue;
     }
 
@@ -96,15 +101,18 @@ function tokenizeShellCommand(command: string): string[] {
   }
 
   pushToken();
+
   return tokens;
 }
 
 function splitShellCommandSegments(tokens: readonly string[]): string[][] {
   const segments: string[][] = [[]];
+
   for (const token of tokens) {
     if (SHELL_COMMAND_SEPARATOR_RE.test(token)) segments.push([]);
     else segments.at(-1)?.push(token);
   }
+
   return segments;
 }
 
@@ -129,6 +137,7 @@ export function findWorkerConfigurationMutation(
     }
 
     const commandName = shellCommandName(segment);
+
     if (commandName === undefined) continue;
     const operands = segment.slice(segment.indexOf(commandName) + 1);
 
@@ -152,6 +161,7 @@ export function findWorkerConfigurationMutation(
 
     if (SHELL_COPY_COMMANDS.has(commandName)) {
       const paths = operands.filter((operand) => !operand.startsWith("-"));
+
       if (isProtectedPath(paths.at(-1))) return "copy-destination";
     }
 
@@ -173,6 +183,7 @@ export default function workerConfigurationGuard(pi: ExtensionAPI) {
         if (ctx.hasUI) {
           ctx.ui.notify(`Blocked manual change to ${PROTECTED_FILE}; run wrangler types.`, "warning");
         }
+
         return { block: true, reason: BLOCK_REASON };
       }
 
@@ -180,11 +191,13 @@ export default function workerConfigurationGuard(pi: ExtensionAPI) {
     }
 
     if (!isToolCallEventType("bash", event)) return;
+
     if (findWorkerConfigurationMutation(event.input.command) === undefined) return;
 
     if (ctx.hasUI) {
       ctx.ui.notify(`Blocked manual change to ${PROTECTED_FILE}; run wrangler types.`, "warning");
     }
+
     return { block: true, reason: BLOCK_REASON };
   });
 }

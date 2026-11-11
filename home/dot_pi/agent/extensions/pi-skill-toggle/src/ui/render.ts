@@ -4,6 +4,7 @@ import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 export function fit(text: string, width: number): string {
   const truncated = truncateToWidth(text, Math.max(0, width));
   const padding = Math.max(0, width - visibleWidth(truncated));
+
   return `${truncated}${" ".repeat(padding)}`;
 }
 
@@ -26,8 +27,10 @@ export function bottomBorder(theme: Theme, innerWidth: number): string {
 export function combineColumns(left: string[], right: string[], leftWidth: number, rightWidth: number, sep: string): string[] {
   const rows = Math.max(left.length, right.length);
   const lines: string[] = [];
+
   for (let i = 0; i < rows; i += 1) {
     lines.push(`${fit(left[i] ?? "", leftWidth)}${sep}${fit(right[i] ?? "", rightWidth)}`);
   }
+
   return lines;
 }

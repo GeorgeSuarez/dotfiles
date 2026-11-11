@@ -14,6 +14,7 @@ export class AtomicSkillChangeWriter implements SkillChangeWriter {
     for (const change of changes) {
       try {
         const current = await this.fs.readFile(change.filePath);
+
         if (current !== change.patch.oldText) {
           result.errors.push({
             skill: change.skill,
@@ -21,6 +22,7 @@ export class AtomicSkillChangeWriter implements SkillChangeWriter {
           });
           continue;
         }
+
         await this.fs.writeFileAtomic(change.filePath, change.patch.newText);
         result.applied.push(change);
       } catch (error) {

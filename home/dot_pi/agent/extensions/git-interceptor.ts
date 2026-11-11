@@ -31,17 +31,24 @@ const COMMIT_MESSAGE_FLAG_RE =
  */
 function commitSkipsHooks(command: string): boolean {
   const tokens = command.split(/[\s;&|]+/);
+
   for (let i = 0; i < tokens.length; i++) {
     if (tokens[i] !== "git") continue;
     let j = i + 1;
+
     while (j < tokens.length && (tokens[j] ?? "").startsWith("-")) j += 1;
+
     if (tokens[j] !== "commit") continue;
+
     for (let k = j + 1; k < tokens.length; k++) {
       const token = tokens[k] ?? "";
+
       if (token === "--" || COMMIT_MESSAGE_FLAG_RE.test(token)) break;
+
       if (/^-[a-zA-Z]*n[a-zA-Z]*$/.test(token)) return true;
     }
   }
+
   return false;
 }
 
@@ -55,6 +62,7 @@ export default function (pi: ExtensionAPI) {
   pi.on("tool_call", (event) => {
     if (!isToolCallEventType("bash", event)) return;
     const command = event.input.command;
+
     if (!GIT_COMMAND_RE.test(command)) return;
 
     if (HOOK_BYPASS_RE.test(command) || commitSkipsHooks(command)) {

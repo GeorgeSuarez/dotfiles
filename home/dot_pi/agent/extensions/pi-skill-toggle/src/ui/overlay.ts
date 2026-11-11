@@ -37,30 +37,36 @@ class SkillToggleOverlay {
   handleInput(data: string): void {
     if (matchesKey(data, Key.escape) || matchesKey(data, Key.ctrl("c"))) {
       this.done({ action: "cancel", drafts: this.getDrafts() });
+
       return;
     }
 
     if (matchesKey(data, Key.ctrl("s"))) {
       this.done({ action: "apply", drafts: this.getDrafts() });
+
       return;
     }
 
     if (matchesKey(data, Key.up)) {
       this.moveSelection(-1);
+
       return;
     }
 
     if (matchesKey(data, Key.down)) {
       this.moveSelection(1);
+
       return;
     }
 
     if (matchesKey(data, Key.space)) {
       const selected = this.getSelectedSkill();
+
       if (selected?.editable) {
         this.desired.set(selected.id, toggleMode(this.desired.get(selected.id) ?? selected.mode));
         this.tui.requestRender();
       }
+
       return;
     }
 
@@ -70,6 +76,7 @@ class SkillToggleOverlay {
         this.selectedIndex = 0;
         this.tui.requestRender();
       }
+
       return;
     }
 
@@ -89,6 +96,7 @@ class SkillToggleOverlay {
 
     const header = this.renderHeader(innerWidth);
     const search = frameLine(this.theme, this.theme.fg("muted", `Search: ${this.search || "(type to filter)"}`), innerWidth);
+
     const body = combineColumns(
       this.renderList(leftWidth, bodyHeight),
       this.renderDetails(rightWidth, bodyHeight),
@@ -122,6 +130,7 @@ class SkillToggleOverlay {
     const editable = this.skills.filter((skill) => skill.editable).length;
     const summary = this.theme.fg("muted", `${this.skills.length} skills • ${editable} editable • ${changed} changed`);
     const gap = Math.max(1, innerWidth - visibleLength(title) - visibleLength(summary));
+
     return `${title}${" ".repeat(gap)}${summary}`;
   }
 
@@ -131,6 +140,7 @@ class SkillToggleOverlay {
 
     if (filtered.length === 0) {
       lines.push(this.theme.fg("dim", "No matching skills"));
+
       return pad(lines, height);
     }
 
@@ -141,6 +151,7 @@ class SkillToggleOverlay {
 
     for (let i = start; i < end; i += 1) {
       const skill = filtered[i];
+
       if (skill === undefined) continue;
       const desired = this.desired.get(skill.id) ?? skill.mode;
       const selected = i === this.selectedIndex;
@@ -160,8 +171,10 @@ class SkillToggleOverlay {
   private renderDetails(width: number, height: number): string[] {
     const skill = this.getSelectedSkill();
     const lines: string[] = [];
+
     if (!skill) {
       lines.push(this.theme.fg("dim", "No skill selected"));
+
       return pad(lines, height);
     }
 
@@ -183,6 +196,7 @@ class SkillToggleOverlay {
     if (skill.diagnostics.length > 0) {
       lines.push("");
       lines.push(this.theme.fg("muted", "Diagnostics:"));
+
       for (const diagnostic of skill.diagnostics.slice(0, 4)) {
         const color = diagnosticColor(diagnostic.severity);
         lines.push(...wrap(`- ${diagnostic.message}`, width).map((line) => this.theme.fg(color, line)));
@@ -194,6 +208,7 @@ class SkillToggleOverlay {
 
   private moveSelection(delta: number): void {
     const filtered = this.getFilteredSkills();
+
     if (filtered.length === 0) return;
     this.selectedIndex = clamp(this.selectedIndex + delta, 0, filtered.length - 1);
     this.tui.requestRender();
@@ -217,13 +232,16 @@ class SkillToggleOverlay {
 
   private getPanelHeight(): number {
     const rows = this.tui.terminal.rows ?? 30;
+
     return clamp(Math.floor(rows * 0.82), 16, 52);
   }
 }
 
 function diagnosticColor(severity: SkillDiagnosticSeverity): "error" | "warning" | "dim" {
   if (severity === "error") return "error";
+
   if (severity === "warning") return "warning";
+
   return "dim";
 }
 
@@ -237,7 +255,9 @@ function clamp(value: number, min: number, max: number): number {
 
 function pad(lines: string[], height: number): string[] {
   const padded = [...lines];
+
   while (padded.length < height) padded.push("");
+
   return padded.slice(0, height);
 }
 
@@ -247,9 +267,11 @@ function shorten(text: string, width: number): string {
 
 function wrap(text: string, width: number): string[] {
   const words = text.split(/\s+/).filter(Boolean);
+
   if (words.length === 0) return [""];
   const lines: string[] = [];
   let current = "";
+
   for (const word of words) {
     if (current.length === 0) {
       current = word;
@@ -260,10 +282,13 @@ function wrap(text: string, width: number): string[] {
       current = word;
     }
   }
+
   if (current) lines.push(current);
+
   return lines;
 }
 
 function visibleLength(input: string): number {
+  // oxlint-disable-next-line eslint/no-control-regex -- ANSI color escapes occupy no visible columns.
   return input.replace(/\x1b\[[0-9;]*m/g, "").length;
 }

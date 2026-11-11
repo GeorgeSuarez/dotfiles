@@ -20,6 +20,13 @@ export interface SkillDiagnostic {
   message: string;
 }
 
+/** Values derived from a skill's front matter for display and validation. */
+export interface SkillMetadata {
+  name: string;
+  description: string;
+  diagnostics: SkillDiagnostic[];
+}
+
 export interface SkillRecord {
   id: string;
   name: string;

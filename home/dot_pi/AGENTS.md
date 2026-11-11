@@ -15,16 +15,17 @@ A new file stays untracked until `chezmoi add <live path>`; `chezmoi managed` an
 
 ## Verify
 
-Run both from the package root (`~/.pi`), and report done only when both are clean:
+Run all three from the package root (`~/.pi`), and report done only when all three are clean:
 
 ```bash
+npm run lint        # oxlint, including the vendored anti-slop rules at error
 npm run typecheck   # strict tsc --noEmit across agent/extensions
 npm test            # bun test tests/*.test.mjs
 ```
 
 `agent/npm/` is a second dependency tree with its own lockfile. Add packages to the `packages` list in `agent/settings.json`; Pi installs them into `agent/npm/`, whose lockfile is what gets tracked. The root `npm ci` covers only the `agent/extensions/*` workspaces.
 
-`tests/feature-extensions.test.mjs` and the four `tests/hark-*.test.mjs` files import `agent/extensions/hark/index.ts`, which is live-only. They run here because `hark/` sits in the live tree; from a fresh checkout those imports fail until `hark/` is tracked or the tests are skipped.
+`tests/feature-extensions.test.mjs` and the four `tests/hark-*.test.mjs` files import `agent/extensions/hark/index.ts`, so `hark/` must stay in the source tree like the other extensions.
 
 When adding tests, put them in `tests/` as Bun `.mjs` files. Mock `globalThis.fetch` and restore it in `afterEach`. Cover tool registration, parameter validation, result shape, cancellation, output limits, and credential redaction.
 
@@ -34,6 +35,7 @@ When adding tests, put them in `tests/` as Bun `.mjs` files. Mock `globalThis.fe
 - `agent/extensions/` — one TypeScript module per extension, auto-discovered. `agent/extensions/README.md` is the source of truth for which extension provides what and which environment variables it reads; consult it instead of enumerating from memory.
 - `agent/prompts/` — `/<name>` prompt templates: `commit`, `pr`, `review`, `tdd`.
 - `agent/skills/` — symlinks into `~/.agents/skills/`; edit the target, not the link.
+- `.oxlintrc.json` — registers the vendored anti-slop Oxlint plugin and enables its rules at `error`. The plugin lives in `tools/oxlint/anti-slop/` (fresh copies come from the `install-anti-slop` skill); its `UPSTREAM.md` records provenance and the ignore rationale. Both are excluded from `tsc`, as are the symlinked `agent/extensions/subagent/**` examples and the `agent/extensions/herdr-agent-state.ts` file herdr generates.
 
 Live-only, absent from source: `sessions/`, `mcp-cache.json`, `mcp-onboarding.json`, `*.bak` (excluded by `home/.chezmoiignore`), plus `mcp.json`, `mcp-auth.json`, `trust.json`, `crashes.json`, and logs. The MCP servers in `agent/mcp.json` (`executor`, `arcgis-docs`) expose their tools through codemode rather than as top-level tools.
 

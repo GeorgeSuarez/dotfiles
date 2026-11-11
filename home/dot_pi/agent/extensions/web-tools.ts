@@ -1,6 +1,7 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { StringEnum } from "@earendil-works/pi-ai";
 import { Type, type Static } from "typebox";
+import { Check } from "typebox/value";
 
 const EXA_URL = "https://mcp.exa.ai/mcp";
 const PARALLEL_URL = "https://search.parallel.ai/mcp";
@@ -46,13 +47,17 @@ const WebSearchParameters = Type.Object({
 });
 
 type WebSearchParameters = Static<typeof WebSearchParameters>;
+
 type Provider = "exa" | "parallel";
 
-type McpPayload = {
-  result?: {
-    content?: Array<{ text?: unknown }>;
-  };
-};
+/** The subset of a hosted MCP JSON-RPC response this extension reads. */
+const McpPayloadSchema = Type.Object({
+  result: Type.Optional(
+    Type.Object({
+      content: Type.Optional(Type.Array(Type.Object({ text: Type.Optional(Type.String()) }))),
+    }),
+  ),
+});
 
 const WebfetchParameters = Type.Object({
   url: Type.String({ description: "HTTP or HTTPS URL to fetch" }),
@@ -74,14 +79,19 @@ async function readBoundedStream(
   const chunks: Uint8Array[] = [];
   let total = 0;
   let truncated = false;
+
   try {
     while (true) {
       if (signal.aborted) throw new DOMException(abortMessage, "AbortError");
       const { done, value } = await reader.read();
+
       if (done) break;
+
       if (signal.aborted) throw new DOMException(abortMessage, "AbortError");
+
       if (!value) continue;
       const remaining = maxBytes - total;
+
       if (value.byteLength > remaining) {
         if (remaining > 0) chunks.push(value.slice(0, remaining));
         total = maxBytes;
@@ -89,18 +99,22 @@ async function readBoundedStream(
         await reader.cancel("response too large");
         break;
       }
+
       total += value.byteLength;
       chunks.push(value);
     }
   } finally {
     reader.releaseLock();
   }
+
   const data = new Uint8Array(total);
   let offset = 0;
+
   for (const chunk of chunks) {
     data.set(chunk, offset);
     offset += chunk.byteLength;
   }
+
   return { data, truncated };
 }
 
@@ -114,75 +128,92 @@ function truthy(value: string | undefined): boolean {
  */
 export function selectProvider(): Provider {
   const override = process.env.OPENCODE_WEBSEARCH_PROVIDER;
+
   if (override === "exa" || override === "parallel") return override;
+
   if (
     truthy(process.env.OPENCODE_ENABLE_PARALLEL) ||
     truthy(process.env.OPENCODE_EXPERIMENTAL_PARALLEL)
   ) {
     return "parallel";
   }
+
   return "exa";
 }
 
 function exaUrl(): string {
   const apiKey = process.env.EXA_API_KEY;
+
   if (!apiKey) return EXA_URL;
   let url: URL;
+
   try {
     url = new URL(EXA_URL);
   } catch {
     throw new Error(`EXA_URL is not a valid URL: ${EXA_URL}`);
   }
+
   url.searchParams.set("exaApiKey", apiKey);
+
   return url.toString();
 }
 
 function modelName(ctx: ExtensionContext): string | undefined {
   const model = ctx.model;
+
   if (!model) return undefined;
+
   return model.id.slice(0, 100);
 }
 
 /** Exa search arguments; `contextMaxCharacters` is omitted when unset. */
-function exaSearchArguments(params: WebSearchParameters): {
+interface ExaSearchArguments {
   query: string;
-  type: string;
+  type: NonNullable<WebSearchParameters["type"]>;
   numResults: number;
-  livecrawl: string;
+  livecrawl: NonNullable<WebSearchParameters["livecrawl"]>;
   contextMaxCharacters?: number;
-} {
-  const args: {
-    query: string;
-    type: string;
-    numResults: number;
-    livecrawl: string;
-    contextMaxCharacters?: number;
-  } = {
+}
+
+function exaSearchArguments(params: WebSearchParameters): ExaSearchArguments {
+  const args: ExaSearchArguments = {
     query: params.query,
     type: params.type ?? "auto",
     numResults: params.numResults ?? 8,
     livecrawl: params.livecrawl ?? "fallback",
   };
+
   if (params.contextMaxCharacters !== undefined) {
     args.contextMaxCharacters = params.contextMaxCharacters;
   }
+
   return args;
 }
 
 /** Parallel search arguments; `model_name` is omitted when pi reports no model. */
+interface ParallelSearchArguments {
+  objective: string;
+  search_queries: string[];
+  session_id: string;
+  model_name?: string;
+}
+
 function parallelSearchArguments(
   params: WebSearchParameters,
   ctx: ExtensionContext,
-): { objective: string; search_queries: string[]; session_id: string; model_name?: string } {
-  const args: { objective: string; search_queries: string[]; session_id: string; model_name?: string } = {
+): ParallelSearchArguments {
+  const args: ParallelSearchArguments = {
     objective: params.query,
     search_queries: [params.query],
     session_id: ctx.sessionManager.getSessionId(),
   };
+
   const model = modelName(ctx);
+
   if (model !== undefined) {
     args.model_name = model;
   }
+
   return args;
 }
 
@@ -207,15 +238,18 @@ function requestBody(
 
 async function readBody(response: Response, signal: AbortSignal): Promise<string> {
   const contentLength = Number(response.headers.get("content-length"));
+
   if (Number.isFinite(contentLength) && contentLength > MAX_RESPONSE_BYTES) {
     throw new Error("Search response exceeded the maximum size");
   }
 
   if (!response.body) {
     const text = await response.text();
+
     if (new TextEncoder().encode(text).byteLength > MAX_RESPONSE_BYTES) {
       throw new Error("Search response exceeded the maximum size");
     }
+
     return text;
   }
 
@@ -225,39 +259,55 @@ async function readBody(response: Response, signal: AbortSignal): Promise<string
     MAX_RESPONSE_BYTES,
     "The search request was aborted",
   );
+
   if (truncated) {
     throw new Error("Search response exceeded the maximum size");
   }
+
   return new TextDecoder().decode(data);
 }
 
 function payloadText(payload: string): string | undefined {
   const trimmed = payload.trim();
+
   if (!trimmed.startsWith("{")) return undefined;
-  let data: McpPayload;
+
   try {
-    data = JSON.parse(trimmed) as McpPayload;
+    const parsed: unknown = JSON.parse(trimmed);
+
+    if (!Check(McpPayloadSchema, parsed)) return undefined;
+
+    return parsed.result?.content?.find((item) => (item.text?.length ?? 0) > 0)?.text;
   } catch {
     // Not a plain JSON-RPC body: the caller still has the SSE form to try.
     return undefined;
   }
-  return data.result?.content?.find((item) => typeof item.text === "string" && item.text.length > 0)
-    ?.text as string | undefined;
 }
 
 /** Parse the plain JSON and SSE response forms returned by hosted MCP servers. */
 export function parseSearchResponse(body: string): string | undefined {
   const trimmed = body.trim();
   const direct = trimmed ? payloadText(trimmed) : undefined;
+
   if (direct) return direct;
 
   for (const line of body.split("\n")) {
     if (!line.startsWith("data: ")) continue;
     const text = payloadText(line.slice(6));
+
     if (text) return text;
   }
+
   return undefined;
 }
+
+/** JSON-RPC request headers; the parallel provider adds its own user agent and key. */
+type SearchRequestHeaders = {
+  Accept: string;
+  "Content-Type": string;
+  "User-Agent"?: string;
+  Authorization?: string;
+};
 
 async function fetchSearch(
   provider: Provider,
@@ -268,16 +318,19 @@ async function fetchSearch(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   const abortParent = () => controller.abort();
+
   if (signal?.aborted) controller.abort();
   signal?.addEventListener("abort", abortParent, { once: true });
 
   try {
-    const headers: Record<string, string> = {
+    const headers: SearchRequestHeaders = {
       Accept: "application/json, text/event-stream",
       "Content-Type": "application/json",
     };
+
     if (provider === "parallel") {
       headers["User-Agent"] = "pi-websearch/1";
+
       if (process.env.PARALLEL_API_KEY) {
         headers.Authorization = `Bearer ${process.env.PARALLEL_API_KEY}`;
       }
@@ -289,7 +342,9 @@ async function fetchSearch(
       body: requestBody(provider, params, ctx),
       signal: controller.signal,
     });
+
     if (!response.ok) throw new Error(`Search request failed with HTTP ${response.status}`);
+
     return parseSearchResponse(await readBody(response, controller.signal));
   } finally {
     clearTimeout(timeout);
@@ -309,6 +364,7 @@ function decodeEntities(value: string): string {
 
 export function htmlToText(html: string): string {
   const title = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1];
+
   const body = html
     .replace(/<(script|style|noscript|template|title)[^>]*>[\s\S]*?<\/\1>/gi, "")
     .replace(/<h1[^>]*>/gi, "\n# ")
@@ -317,11 +373,13 @@ export function htmlToText(html: string): string {
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<\/(p|div|article|section|h[1-6]|li|tr|blockquote)>/gi, "\n")
     .replace(/<[^>]+>/g, " ");
+
   const text = decodeEntities(body)
     .replace(/[ \t]+/g, " ")
     .replace(/\n[ \t]+/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+
   return [title ? `# ${decodeEntities(title.trim())}` : "", text].filter(Boolean).join("\n\n");
 }
 
@@ -332,30 +390,36 @@ async function readBounded(
   if (!response.body) {
     const raw = await response.text();
     const bytes = new TextEncoder().encode(raw);
+
     return {
       text: new TextDecoder().decode(bytes.slice(0, MAX_BYTES)),
       truncated: bytes.byteLength > MAX_BYTES,
     };
   }
+
   const { data, truncated } = await readBoundedStream(
     response.body.getReader(),
     signal,
     MAX_BYTES,
     "Fetch aborted",
   );
+
   return { text: new TextDecoder().decode(data), truncated };
 }
 
 function validateUrl(input: string): URL {
   let url: URL;
+
   try {
     url = new URL(input);
   } catch {
     throw new Error(`Not a valid URL: ${input}`);
   }
+
   if (url.protocol !== "http:" && url.protocol !== "https:") {
     throw new Error("Only HTTP and HTTPS URLs are supported");
   }
+
   return url;
 }
 
@@ -372,12 +436,15 @@ export default function web(pi: ExtensionAPI) {
     parameters: WebSearchParameters,
     execute: async (_toolCallId, params, signal, _onUpdate, ctx) => {
       const query = params.query.trim();
+
       if (!query) throw new Error("Websearch query cannot be empty");
 
       const normalized = { ...params, query };
       const provider = selectProvider();
+
       try {
         const result = await fetchSearch(provider, normalized, ctx, signal);
+
         return {
           content: [{ type: "text", text: result ?? NO_RESULTS }],
           details: { provider, query },
@@ -386,6 +453,7 @@ export default function web(pi: ExtensionAPI) {
         // A user interrupt is not a search failure: let pi cancel the call.
         if (signal?.aborted) throw error;
         const reason = (error instanceof Error ? error.message : String(error)).slice(0, 300);
+
         return {
           content: [{ type: "text", text: `${SEARCH_FAILURE(query)}: ${reason}` }],
           details: { provider, query, error: true, reason },
@@ -410,6 +478,7 @@ export default function web(pi: ExtensionAPI) {
       const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
       const onAbort = () => controller.abort();
       signal?.addEventListener("abort", onAbort, { once: true });
+
       try {
         const response = await fetch(url, {
           headers: {
@@ -417,17 +486,21 @@ export default function web(pi: ExtensionAPI) {
           },
           signal: controller.signal,
         });
+
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const fetched = await readBounded(response, controller.signal);
         const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
         const format = params.format ?? "auto";
+
         // Only "raw" keeps the body untouched; "text" and "markdown" both
         // flatten HTML, and "auto" flattens only when the body is HTML.
         const convert =
           format === "text" ||
           format === "markdown" ||
           (format === "auto" && contentType.includes("html"));
+
         const text = convert ? htmlToText(fetched.text) : fetched.text;
+
         return {
           content: [
             {

@@ -3,21 +3,16 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { writeFile } from "node:fs/promises";
 import { resolve, sep } from "node:path";
 
-function textContent(content: unknown): string {
-  if (!Array.isArray(content)) return "";
+/** Join the text blocks of an assistant message; thinking and tool-call blocks are skipped. */
+function textContent(content: AssistantMessage["content"]): string {
+  const parts: string[] = [];
 
-  return content
-    .filter(
-      (block): block is { type: "text"; text: string } =>
-        typeof block === "object" &&
-        block !== null &&
-        "type" in block &&
-        block.type === "text" &&
-        "text" in block &&
-        typeof block.text === "string",
-    )
-    .map((block) => block.text)
-    .join("\n\n");
+  for (const block of content) {
+    if (block.type !== "text") continue;
+    parts.push(block.text);
+  }
+
+  return parts.join("\n\n");
 }
 
 export default function saveMarkdownExtension(pi: ExtensionAPI) {
@@ -28,8 +23,10 @@ export default function saveMarkdownExtension(pi: ExtensionAPI) {
 
       const branch = ctx.sessionManager.getBranch();
       let assistentMessage: AssistantMessage | undefined;
+
       for (let index = branch.length - 1; index >= 0; index--) {
         const entry = branch[index];
+
         if (entry?.type === "message" && entry.message.role === "assistant") {
           assistentMessage = entry.message;
           break;
@@ -38,26 +35,33 @@ export default function saveMarkdownExtension(pi: ExtensionAPI) {
 
       if (!assistentMessage) {
         ctx.ui.notify("No assistant response to save", "warning");
+
         return;
       }
 
       const name = args.trim();
+
       if (!name) {
         ctx.ui.notify("Usage: /save-md name", "warning");
+
         return;
       }
 
       const markdown = textContent(assistentMessage.content);
+
       if (!markdown.trim()) {
         ctx.ui.notify("The latest assistant response has no Markdown text", "warning");
+
         return;
       }
 
       const fileName = name.endsWith(".md") ? name : `${name}.md`;
       const root = resolve(ctx.cwd);
       const path = resolve(root, fileName);
+
       if (path !== root && !path.startsWith(`${root}${sep}`)) {
         ctx.ui.notify(`Refusing to write outside the working directory: ${path}`, "error");
+
         return;
       }
 
@@ -67,15 +71,12 @@ export default function saveMarkdownExtension(pi: ExtensionAPI) {
           flag: "wx",
         });
       } catch (error) {
-        if (
-          typeof error === "object" &&
-          error !== null &&
-          "code" in error &&
-          error.code === "EEXIST"
-        ) {
+        if (error instanceof Error && "code" in error && error.code === "EEXIST") {
           ctx.ui.notify(`File already exists: ${path}`, "error");
+
           return;
         }
+
         throw error;
       }
 

@@ -11,9 +11,11 @@ export class MinimalFrontmatterPatcher implements FrontmatterPatcher {
   patchInvocationMode(doc: FrontmatterDocument, desiredMode: SkillInvocationMode): FrontmatterPatch {
     if (!doc.hasFrontmatter) {
       const newFrontmatter = desiredMode === "manual-only" ? `${DISABLE_KEY}: true${doc.lineEnding}` : "";
+
       const newText = newFrontmatter
         ? `---${doc.lineEnding}${newFrontmatter}---${doc.lineEnding}${doc.raw}`
         : doc.raw;
+
       return { oldText: doc.raw, newText };
     }
 
@@ -22,6 +24,7 @@ export class MinimalFrontmatterPatcher implements FrontmatterPatcher {
       : ensureAgentInvocable(doc.frontmatterText);
 
     const newText = doc.raw.slice(0, doc.frontmatterStart) + newFrontmatter + doc.raw.slice(doc.frontmatterEnd);
+
     return { oldText: doc.raw, newText };
   }
 }
@@ -37,16 +40,20 @@ function ensureManualOnly(frontmatterText: string, lineEnding: "\n" | "\r\n"): s
         next.push(`${DISABLE_KEY}: true${getEol(line) || lineEnding}`);
         replaced = true;
       }
+
       continue;
     }
+
     next.push(line);
   }
 
   if (!replaced) {
     const lastLine = next.at(-1);
+
     if (lastLine !== undefined && !endsWithEol(lastLine)) {
       next.splice(-1, 1, `${lastLine}${lineEnding}`);
     }
+
     next.push(`${DISABLE_KEY}: true${lineEnding}`);
   }
 
@@ -62,12 +69,15 @@ function ensureAgentInvocable(frontmatterText: string): string {
 function splitLinesPreserve(text: string, fallbackEol: "\n" | "\r\n"): string[] {
   if (text.length === 0) return [];
   const lines = text.match(/.*(?:\r?\n|$)/g)?.filter((line) => line.length > 0) ?? [text];
+
   return lines.length > 0 ? lines : [fallbackEol];
 }
 
 function getEol(line: string): string {
   if (line.endsWith("\r\n")) return "\r\n";
+
   if (line.endsWith("\n")) return "\n";
+
   return "";
 }
 

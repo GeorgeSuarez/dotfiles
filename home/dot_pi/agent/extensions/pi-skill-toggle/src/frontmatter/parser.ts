@@ -8,6 +8,7 @@ export class SimpleFrontmatterCodec implements FrontmatterCodec {
   parse(raw: string): FrontmatterDocument {
     const lineEnding: "\n" | "\r\n" = raw.includes("\r\n") ? "\r\n" : "\n";
     const opening = raw.match(/^---[ \t]*(\r?\n)/);
+
     if (!opening) {
       return {
         raw,
@@ -25,6 +26,7 @@ export class SimpleFrontmatterCodec implements FrontmatterCodec {
     const frontmatterStart = opening[0].length;
     const rest = raw.slice(frontmatterStart);
     const closing = /^---[ \t]*(?:\r?\n|$)/m.exec(rest);
+
     if (!closing || closing.index === undefined) {
       return {
         raw,
@@ -57,27 +59,37 @@ export class SimpleFrontmatterCodec implements FrontmatterCodec {
   }
 }
 
-function parseYamlLikeFields(frontmatterText: string): Record<string, FrontmatterScalarValue> {
-  const fields: Record<string, FrontmatterScalarValue> = {};
+function parseYamlLikeFields(frontmatterText: string): FrontmatterDocument["fields"] {
+  const fields: FrontmatterDocument["fields"] = {};
+
   for (const rawLine of frontmatterText.split(/\r?\n/)) {
     const line = rawLine.trim();
+
     if (!line || line.startsWith("#")) continue;
     const match = /^([A-Za-z0-9_-]+)\s*:\s*(.*)$/.exec(rawLine);
+
     if (!match) continue;
     const key = match[1];
+
     if (!key) continue;
     fields[key] = parseScalar(match[2] ?? "");
   }
+
   return fields;
 }
 
 function parseScalar(raw: string): FrontmatterScalarValue {
   const value = raw.trim();
+
   if (value === "true") return true;
+
   if (value === "false") return false;
+
   if (value === "null" || value === "~") return null;
+
   if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
     return value.slice(1, -1);
   }
+
   return value;
 }

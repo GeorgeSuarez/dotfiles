@@ -1,12 +1,14 @@
-import type { AssistantMessage } from "@earendil-works/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import { homedir } from "node:os";
 
 function compactNumber(value: number | null | undefined): string {
 	if (value === null || value === undefined) return "?";
+
 	if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}m`;
+
 	if (value >= 1_000) return `${(value / 1_000).toFixed(1)}k`;
+
 	return String(value);
 }
 
@@ -14,8 +16,11 @@ function compactNumber(value: number | null | undefined): string {
  * `/home/me2` into `~2` (the boundary bug pi fixed in its own core). */
 function shortenHome(value: string): string {
 	const home = process.env.HOME ?? homedir();
+
 	if (!home) return value;
+
 	if (value === home) return "~";
+
 	return value.startsWith(`${home}/`) ? `~${value.slice(home.length)}` : value;
 }
 
@@ -35,20 +40,24 @@ let usageCache: { key: string; usage: SessionUsage } | undefined;
 function sessionUsage(ctx: ExtensionContext): SessionUsage {
 	const branch = ctx.sessionManager.getBranch();
 	const key = `${ctx.sessionManager.getLeafId() ?? ""}:${branch.length}`;
+
 	if (usageCache?.key === key) return usageCache.usage;
 
 	let input = 0;
 	let output = 0;
 	let cost = 0;
+
 	for (const entry of branch) {
 		if (entry.type !== "message" || entry.message.role !== "assistant") continue;
-		const usage = (entry.message as AssistantMessage).usage;
+		const usage = entry.message.usage;
 		input += usage.input;
 		output += usage.output;
 		cost += usage.cost.total;
 	}
+
 	const usage = { input, output, cost };
 	usageCache = { key, usage };
+
 	return usage;
 }
 
@@ -58,14 +67,18 @@ type ContextUsage = NonNullable<ReturnType<ExtensionContext["getContextUsage"]>>
 function formatContextLabel(context: ContextUsage | undefined, percent: number | null): string {
 	if (!context) return "?";
 	const size = `${compactNumber(context.tokens)}/${compactNumber(context.contextWindow)}`;
+
 	return `${size} ${percent === null ? "?" : `${percent.toFixed(0)}%`}`;
 }
 
 /** Green under 75%, amber from 75%, red from 90%. */
 function contextColorFor(percent: number | null): "success" | "warning" | "error" {
 	if (percent === null) return "success";
+
 	if (percent >= 90) return "error";
+
 	if (percent >= 75) return "warning";
+
 	return "success";
 }
 
@@ -77,7 +90,9 @@ function formatExtensionStatuses(
 ): string {
 	if (statuses.length === 0) return "";
 	const shown = statuses.slice(0, 2).join(separator);
+
 	if (statuses.length <= 2) return shown;
+
 	return `${shown}${separator}${dim(`+${statuses.length - 2}`)}`;
 }
 
@@ -87,6 +102,7 @@ export default function statusLine(pi: ExtensionAPI) {
 	function install(ctx: ExtensionContext): void {
 		if (!enabled) {
 			ctx.ui.setFooter(undefined);
+
 			return;
 		}
 
@@ -123,15 +139,18 @@ export default function statusLine(pi: ExtensionAPI) {
 						theme.fg("syntaxNumber", `↑${compactNumber(usage.input)} ↓${compactNumber(usage.output)}`),
 						costPart,
 					].join(separator);
+
 					const statusPart = formatExtensionStatuses(extensionStatuses, separator, (text) =>
 						theme.fg("dim", text),
 					);
+
 					const right = [statusPart, modelPart].filter(Boolean).join(separator);
 					const full = right ? `${detailLeft}${separator}${right}${thinkingPart}` : `${detailLeft}${thinkingPart}`;
 
 					if (visibleWidth(full) <= width) return [full];
 
 					const compact = `${cwdPart}${separator}${branch ? theme.fg("customMessageLabel", branch) : "-"}${separator}${contextPart}${separator}${costPart}${separator}${modelPart}`;
+
 					return [truncateToWidth(compact, width, "…")];
 				},
 			};

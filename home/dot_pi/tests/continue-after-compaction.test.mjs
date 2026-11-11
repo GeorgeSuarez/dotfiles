@@ -5,6 +5,7 @@ import continueAfterCompaction from "../agent/extensions/continue-after-compacti
 function fakeApi() {
   const handlers = new Map();
   const sent = [];
+
   return {
     sent,
     on(event, handler) {

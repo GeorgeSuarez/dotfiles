@@ -22,6 +22,7 @@ import startupHeader, {
 import { VERSION } from "@earendil-works/pi-coding-agent";
 
 const theme = { fg: (_c, s) => s, bold: (s) => s, getColorMode: () => "truecolor" };
+
 const loaded = {
   model: "opencode-go/muse-spark",
   cwdDir: "~/proj",
@@ -35,17 +36,20 @@ function captureHeader() {
   let factory;
   const handlers = {};
   const cwd = mkdtempSync(join(tmpdir(), "pi-header-cwd-"));
+
   const ctx = {
     mode: "tui",
     cwd,
     model: undefined,
     ui: { setHeader: (f) => (factory = f) },
   };
+
   const pi = {
     on: (e, h) => (handlers[e] = h),
     getAllTools: () => [{ name: "write" }, { name: "read" }, { name: "bash" }],
     getCommands: () => [],
   };
+
   return { pi, ctx, handlers, getFactory: () => factory };
 }
 
@@ -76,11 +80,13 @@ describe("startup header table", () => {
     expect(lines.some((l) => l.includes("Skill(s):"))).toBe(false);
     expect(lines.some((l) => l.includes("Context:"))).toBe(true);
     expect(lines.some((l) => l.includes("Extension(s):"))).toBe(true);
+
     for (const line of lines) expect([...line].length).toBeLessThanOrEqual(80);
   });
 
   test("narrows without exceeding width", () => {
     const lines = buildHeaderLines(theme, 40, loaded).map((l) => stripTerminalSequences(l));
+
     for (const line of lines) expect([...line].length).toBeLessThanOrEqual(40);
     expect(lines.some((l) => l.includes("maestro"))).toBe(true);
   });
@@ -107,6 +113,7 @@ describe("startup header table", () => {
     const ansi256 = getPiLogoRows("256color");
     expect(ansi256[0]).not.toContain("38;2;");
     expect(ansi256[0]).toContain("\x1b[38;5;174m");
+
     for (const row of ansi256) expect(visibleWidth(row)).toBe(16);
   });
 
@@ -163,10 +170,11 @@ describe("startup header table", () => {
 describe("startup header live MCP", () => {
   test("formatMcpDisplay preserves server-name order instead of count order", () => {
     const servers = {
-      maestro: { tools: new Array(10) },
-      executor: { tools: new Array(9) },
-      "chrome-devtools": { tools: new Array(32) },
+      maestro: { tools: Array.from({ length: 10 }) },
+      executor: { tools: Array.from({ length: 9 }) },
+      "chrome-devtools": { tools: Array.from({ length: 32 }) },
     };
+
     // Name-sorted entries: chrome-devtools, executor, maestro.
     expect(formatMcpEntries(servers)).toEqual([
       "(32) chrome-devtools",
@@ -209,6 +217,7 @@ describe("startup header live MCP", () => {
       undefined,
       null,
     ];
+
     expect([...groupMcpToolsByNamespace(tools).entries()]).toEqual([
       ["mcp__executor", 2],
       ["mcp__chrome_devtools", 1],
@@ -237,6 +246,7 @@ describe("startup header live MCP", () => {
       ...["b2", "b1"].map((t) => mcpTool("mcp__zebra", t)),
       mcpTool("mcp__executor", "search"),
     ];
+
     expect(buildMcpEntriesFromTools(tools, ["zebra", "executor"])).toEqual([
       "(1) executor",
       "(2) zebra",
@@ -270,6 +280,7 @@ describe("startup header live MCP", () => {
     const handlers = {};
     const cwd = mkdtempSync(join(tmpdir(), "pi-header-live-cwd-"));
     const ctx = { mode: "tui", cwd, model: undefined, ui: { setHeader: (f) => (factory = f) } };
+
     const liveTools = [
       "integrations",
       "search",
@@ -280,19 +291,24 @@ describe("startup header live MCP", () => {
       "list-artifacts",
       "show-artifact",
     ].map((t) => mcpTool("mcp__executor", t));
+
     liveTools.push({ name: "read", exposure: "direct" });
+
     const pi = {
       on: (e, h) => (handlers[e] = h),
       getAllTools: () => liveTools,
       getMcpServers: () => [{ name: "executor" }],
       getCommands: () => [],
     };
+
     await startupHeader(pi);
     await handlers.session_start({}, ctx);
     const tui = { requestRender() {} };
+
     const lines = factory(tui, theme)
       .render(120)
       .map((l) => stripTerminalSequences(l));
+
     const text = lines.join("\n");
     expect(text).toContain("(1) (8) executor");
     expect(text.includes("maestro")).toBe(false);
@@ -305,12 +321,14 @@ describe("startup header live MCP", () => {
     const cwd = mkdtempSync(join(tmpdir(), "pi-header-turn-cwd-"));
     const ctx = { mode: "tui", cwd, model: undefined, ui: { setHeader: (f) => (factory = f) } };
     let liveTools = [{ name: "read", exposure: "direct" }];
+
     const pi = {
       on: (e, h) => (handlers[e] = h),
       getAllTools: () => liveTools,
       getMcpServers: () => [],
       getCommands: () => [],
     };
+
     await startupHeader(pi);
     await handlers.session_start({}, ctx);
     await handlers.before_agent_start(

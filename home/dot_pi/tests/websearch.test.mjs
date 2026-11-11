@@ -8,8 +8,10 @@ const originalParallel = process.env.OPENCODE_ENABLE_PARALLEL;
 
 afterEach(() => {
 	globalThis.fetch = originalFetch;
+
 	if (originalProvider === undefined) delete process.env.OPENCODE_WEBSEARCH_PROVIDER;
 	else process.env.OPENCODE_WEBSEARCH_PROVIDER = originalProvider;
+
 	if (originalParallel === undefined) delete process.env.OPENCODE_ENABLE_PARALLEL;
 	else process.env.OPENCODE_ENABLE_PARALLEL = originalParallel;
 });
@@ -49,6 +51,7 @@ describe("websearch tool", () => {
 		let request;
 		globalThis.fetch = async (_input, init) => {
 			request = init;
+
 			return new Response(JSON.stringify({ result: { content: [{ type: "text", text: "results" }] } }), {
 				status: 200,
 			});
@@ -64,6 +67,7 @@ describe("websearch tool", () => {
 				sessionManager: { getSessionId: () => "session-1" },
 			},
 		);
+
 		const body = JSON.parse(String(request.body));
 		expect(body).toMatchObject({
 			jsonrpc: "2.0",
@@ -84,11 +88,13 @@ describe("websearch tool", () => {
 		globalThis.fetch = async (input, init) => {
 			requestUrl = String(input);
 			request = init;
+
 			return new Response('data: {"result":{"content":[{"text":"parallel results"}]}}\n\n');
 		};
 
 		const tools = [];
 		websearch({ registerTool: (tool) => tools.push(tool) });
+
 		const result = await tools[0].execute(
 			"call-2",
 			{ query: "pi" },
@@ -96,6 +102,7 @@ describe("websearch tool", () => {
 			undefined,
 			{ model: undefined, sessionManager: { getSessionId: () => "session-2" } },
 		);
+
 		const body = JSON.parse(String(request.body));
 		expect(requestUrl).toBe("https://search.parallel.ai/mcp");
 		expect(body.params).toMatchObject({

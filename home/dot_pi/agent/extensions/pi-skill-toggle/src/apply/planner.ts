@@ -22,17 +22,21 @@ export class DefaultSkillTogglePlanner implements SkillTogglePlanner {
 
     for (const draft of drafts) {
       const record = recordById.get(draft.skill.id);
+
       if (!record || !record.editable) continue;
 
       const raw = await this.fs.readFile(record.filePath);
       const doc = this.codec.parse(raw);
+
       if (!doc.hasFrontmatter) continue;
 
       const currentMode = classifyInvocationMode(doc);
       const needsNormalization = hasDuplicateDisableModelInvocation(doc);
+
       if (currentMode === draft.desiredMode && !needsNormalization) continue;
 
       const patch = this.patcher.patchInvocationMode(doc, draft.desiredMode);
+
       if (patch.oldText === patch.newText) continue;
 
       changes.push({

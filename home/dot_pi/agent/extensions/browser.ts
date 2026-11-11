@@ -10,6 +10,7 @@ const Parameters = Type.Object({
 	ref: Type.Optional(Type.String({ description: "Accessibility ref such as @e3 for click/fill/press" })),
 	text: Type.Optional(Type.String({ description: "Text for fill, key name for press, or screenshot path" })),
 });
+
 type Params = Static<typeof Parameters>;
 
 function configuredDomains(): string[] {
@@ -22,14 +23,18 @@ function configuredDomains(): string[] {
 function assertAllowed(urlText: string | undefined): void {
 	if (!urlText) return;
 	let url: URL;
+
 	try {
 		url = new URL(urlText);
 	} catch {
 		throw new Error(`Browser navigation blocked: not a valid URL: ${JSON.stringify(urlText)}`);
 	}
+
 	const allowed = configuredDomains();
+
 	if (allowed.length === 0) return;
 	const host = url.hostname.toLowerCase();
+
 	if (!allowed.some((domain) => host === domain || host.endsWith(`.${domain}`))) {
 		throw new Error(`Browser navigation blocked by PI_BROWSER_ALLOWED_DOMAINS: ${host}`);
 	}
@@ -39,6 +44,7 @@ function argsFor(params: Params): string[] {
 	switch (params.action) {
 		case "open":
 			if (!params.url) throw new Error("browser open requires url");
+
 			return ["open", params.url];
 		case "read":
 			return params.url ? ["read", params.url] : ["read"];
@@ -46,12 +52,15 @@ function argsFor(params: Params): string[] {
 			return ["snapshot", "-i", "-u"];
 		case "click":
 			if (!params.ref) throw new Error("browser click requires ref");
+
 			return ["click", params.ref];
 		case "fill":
 			if (!params.ref || params.text === undefined) throw new Error("browser fill requires ref and text");
+
 			return ["fill", params.ref, params.text];
 		case "press":
 			if (!params.text) throw new Error("browser press requires text");
+
 			return ["press", params.text];
 		case "screenshot":
 			return params.text ? ["screenshot", params.text] : ["screenshot"];
@@ -84,7 +93,9 @@ export default function browser(pi: ExtensionAPI) {
 			const commandArgs = [...safetyArgs, ...(session ? ["--session", session] : []), ...args];
 			const result = await pi.exec("agent-browser", commandArgs, { signal, timeout: 30_000 });
 			const output = [result.stdout, result.stderr].filter(Boolean).join("\n").trim() || "(no browser output)";
+
 			if (result.code !== 0) throw new Error(output);
+
 			return {
 				content: [{ type: "text", text: output.slice(0, 50_000) }],
 				details: { action: params.action, session: session ?? "default" },

@@ -6,6 +6,7 @@ import workerConfigurationGuard, {
 /** Captures the handlers an extension registers, so tool calls can be replayed. */
 function fakeApi() {
   const handlers = new Map();
+
   return {
     on(event, handler) {
       handlers.set(event, [...(handlers.get(event) ?? []), handler]);
@@ -18,6 +19,7 @@ function fakeApi() {
 
 function fakeContext() {
   const notifications = [];
+
   return {
     hasUI: true,
     notifications,
@@ -34,9 +36,11 @@ function runToolCall(event, ctx = fakeContext()) {
   const pi = fakeApi();
   workerConfigurationGuard(pi);
   let result;
+
   for (const handler of pi.registered("tool_call")) {
     result = handler(event, ctx) ?? result;
   }
+
   return { result, ctx };
 }
 

@@ -9,6 +9,19 @@ import {
   loadProjectContextFiles,
 } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
+import type { ToolInfo } from "@earendil-works/pi-coding-agent";
+import { Type } from "typebox";
+import { Check } from "typebox/value";
+
+/** Global and project `mcp.json`: only the server names (keys) are read. */
+const McpConfigSchema = Type.Object({
+  mcpServers: Type.Optional(Type.Object({})),
+});
+
+/** A package manifest that declares Pi extensions. */
+const ExtensionManifestSchema = Type.Object({
+  pi: Type.Optional(Type.Object({ extensions: Type.Optional(Type.Array(Type.Unknown())) })),
+});
 
 /**
  * Startup header as a table with the colored Pi logo (pi.dev/logo-auto.svg)
@@ -20,11 +33,11 @@ import { truncateToWidth, visibleWidth, wrapTextWithAnsi } from "@earendil-works
  */
 
 /** Pi brand colors, matching the built-in header logo; fixed across themes. */
-const PI_LOGO_COLORS: Record<string, readonly [number, number, number]> = {
-  S: [228, 138, 122], // coral: top bar + bowl
-  B: [79, 142, 179], // blue: stem + mid connector
-  Y: [234, 182, 93], // yellow: i bar
-};
+const PI_LOGO_COLORS = new Map<string, readonly [number, number, number]>([
+  ["S", [228, 138, 122]], // coral: top bar + bowl
+  ["B", [79, 142, 179]], // blue: stem + mid connector
+  ["Y", [234, 182, 93]], // yellow: i bar
+]);
 
 /**
  * The mark as a 16x16 pixel grid, one character per pixel, "." transparent.
@@ -54,19 +67,23 @@ const PI_LOGO_GRID: readonly string[] = [
 export type LogoColorMode = "truecolor" | "256color";
 
 const LOGO_RESET = "\x1b[0m";
+
 /** xterm 6x6x6 cube levels used for the 256-color fallback. */
 const ANSI_CUBE = [0, 95, 135, 175, 215, 255];
 
 function nearestCubeIndex(value: number): number {
   let closest = 0;
   let closestDistance = Number.POSITIVE_INFINITY;
+
   for (const [index, level] of ANSI_CUBE.entries()) {
     const distance = Math.abs(level - value);
+
     if (distance < closestDistance) {
       closest = index;
       closestDistance = distance;
     }
   }
+
   return closest;
 }
 
@@ -76,16 +93,18 @@ function rgbToAnsi256([r, g, b]: readonly [number, number, number]): number {
 }
 
 function logoColor(symbol: string | undefined): readonly [number, number, number] | undefined {
-  return symbol === undefined ? undefined : PI_LOGO_COLORS[symbol];
+  return symbol === undefined ? undefined : PI_LOGO_COLORS.get(symbol);
 }
 
 function logoFg(color: readonly [number, number, number], mode: LogoColorMode): string {
   const [r, g, b] = color;
+
   return mode === "truecolor" ? `\x1b[38;2;${r};${g};${b}m` : `\x1b[38;5;${rgbToAnsi256(color)}m`;
 }
 
 function logoBg(color: readonly [number, number, number], mode: LogoColorMode): string {
   const [r, g, b] = color;
+
   return mode === "truecolor" ? `\x1b[48;2;${r};${g};${b}m` : `\x1b[48;5;${rgbToAnsi256(color)}m`;
 }
 
@@ -97,15 +116,19 @@ const logoRowsCache = new Map<LogoColorMode, string[]>();
 
 export function getPiLogoRows(mode: LogoColorMode = "truecolor"): string[] {
   const cached = logoRowsCache.get(mode);
+
   if (cached) return cached;
   const rows: string[] = [];
+
   for (let y = 0; y < PI_LOGO_GRID.length; y += 2) {
     const top = PI_LOGO_GRID[y] ?? "";
     const bottom = PI_LOGO_GRID[y + 1] ?? "";
     let line = "";
+
     for (let x = 0; x < Math.max(top.length, bottom.length); x++) {
       const upper = logoColor(top[x]);
       const lower = logoColor(bottom[x]);
+
       if (upper && lower) {
         // Row pairs are equal in the current grid, so usually a full block.
         line +=
@@ -120,9 +143,12 @@ export function getPiLogoRows(mode: LogoColorMode = "truecolor"): string[] {
         line += " ";
       }
     }
+
     rows.push(line);
   }
+
   logoRowsCache.set(mode, rows);
+
   return rows;
 }
 
@@ -133,8 +159,10 @@ const MAX_VISIBLE_ITEMS = 8;
 export function formatNameList(names: string[]): string {
   if (names.length === 0) return "none";
   const sorted = [...names].sort((a, b) => a.localeCompare(b));
+
   if (sorted.length <= MAX_VISIBLE_ITEMS) return `(${sorted.length}) ${sorted.join(", ")}`;
   const visible = sorted.slice(0, MAX_VISIBLE_ITEMS);
+
   return `(${sorted.length}) ${visible.join(", ")} +${sorted.length - visible.length} more`;
 }
 
@@ -144,6 +172,7 @@ export function formatMcpEntries(
   servers: Record<string, { tools?: unknown[] } | undefined> | undefined,
 ): string[] {
   if (!servers) return [];
+
   return Object.entries(servers)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([name, s]) => (Array.isArray(s?.tools) ? `(${s.tools.length}) ${name}` : name));
@@ -161,8 +190,10 @@ export function formatMcpDisplay(
  * order by count prefix instead of server name. */
 export function formatMcpEntriesDisplay(entries: string[]): string {
   if (entries.length === 0) return "none";
+
   if (entries.length <= MAX_VISIBLE_ITEMS) return `(${entries.length}) ${entries.join(", ")}`;
   const visible = entries.slice(0, MAX_VISIBLE_ITEMS);
+
   return `(${entries.length}) ${visible.join(", ")} +${entries.length - visible.length} more`;
 }
 
@@ -183,25 +214,31 @@ export function groupMcpToolsByNamespace(
   tools: Array<LiveToolLike | undefined | null> | undefined | null,
 ): Map<string, number> {
   const counts = new Map<string, number>();
+
   for (const t of tools ?? []) {
     if (!t) continue;
+
     if (t.exposure === "hidden") continue;
     const ns = t.namespace?.name;
-    if (typeof ns === "string" && ns.startsWith("mcp__")) {
+
+    if (ns !== undefined && ns.startsWith("mcp__")) {
       counts.set(ns, (counts.get(ns) ?? 0) + 1);
       continue;
     }
+
     // Defensive fallback: derive namespace from mcp__<server>__<tool> names
     // when namespace metadata is missing (should not happen for MCP tools).
-    if (typeof t.name === "string" && t.name.startsWith("mcp__")) {
+    if (t.name?.startsWith("mcp__")) {
       const rest = t.name.slice("mcp__".length);
       const sep = rest.indexOf("__");
+
       if (sep > 0) {
         const fallbackNs = `mcp__${rest.slice(0, sep)}`;
         counts.set(fallbackNs, (counts.get(fallbackNs) ?? 0) + 1);
       }
     }
   }
+
   return counts;
 }
 
@@ -210,6 +247,7 @@ export function resolveMcpServerDisplayName(namespace: string, knownNames: strin
   for (const n of knownNames) {
     if (mcpNamespaceForServer(n) === namespace) return n;
   }
+
   return namespace.startsWith("mcp__") ? namespace.slice("mcp__".length) : namespace;
 }
 
@@ -219,6 +257,7 @@ export function buildMcpEntriesFromTools(
   knownNames: string[] = [],
 ): string[] {
   const counts = groupMcpToolsByNamespace(tools);
+
   return [...counts.entries()]
     .map(([ns, count]) => ({ name: resolveMcpServerDisplayName(ns, knownNames), count }))
     .sort((a, b) => a.name.localeCompare(b.name))
@@ -231,26 +270,30 @@ const mcpConfigNamesCache = new Map<string, string[]>();
 export function readMcpConfigServerNames(agentDir: string, cwd: string): string[] {
   const cacheKey = `${agentDir}\u0000${cwd}`;
   const cached = mcpConfigNamesCache.get(cacheKey);
+
   if (cached) return cached;
   const names: string[] = [];
   const files = [join(agentDir, "mcp.json")];
+
   // Project config only affects display-name recovery (inclusion is driven by
   // live tools), so reading it without a trust check is safe: no values loaded.
   if (cwd) files.push(join(cwd, CONFIG_DIR_NAME, "mcp.json"));
+
   for (const file of files) {
     try {
-      const parsed = JSON.parse(readFileSync(file, "utf8")) as {
-        mcpServers?: Record<string, unknown>;
-      };
-      if (parsed?.mcpServers && typeof parsed.mcpServers === "object") {
-        names.push(...Object.keys(parsed.mcpServers));
+      const parsed: unknown = JSON.parse(readFileSync(file, "utf8"));
+
+      if (Check(McpConfigSchema, parsed)) {
+        names.push(...Object.keys(parsed.mcpServers ?? {}));
       }
     } catch {
       // missing/unparsable config contributes no names
     }
   }
+
   if (mcpConfigNamesCache.size >= 8) mcpConfigNamesCache.clear();
   mcpConfigNamesCache.set(cacheKey, names);
+
   return names;
 }
 
@@ -262,23 +305,28 @@ function readLiveMcpEntries(
   agentDir: string,
   cwd: string,
 ): string[] {
-  let tools: LiveToolLike[] = [];
+  let tools: ToolInfo[] = [];
+
   try {
-    tools = (pi.getAllTools?.() ?? []) as LiveToolLike[];
+    tools = pi.getAllTools?.() ?? [];
   } catch {
     tools = [];
   }
+
   let known: string[] = [];
+
   try {
-    known.push(...((pi.getMcpServers?.() ?? []).map((s) => s.name) as string[]));
+    known.push(...(pi.getMcpServers?.() ?? []).map((s) => s.name));
   } catch {
     // older pi without getMcpServers; config names below still apply
   }
+
   try {
     known.push(...readMcpConfigServerNames(agentDir, cwd));
   } catch {
     // ignore config read errors; fallback display uses namespace suffix
   }
+
   return buildMcpEntriesFromTools(tools, [...new Set(known)]);
 }
 
@@ -303,11 +351,11 @@ export function scanAgentsFiles(
 
 function isExtensionDir(dir: string): boolean {
   if (existsSync(join(dir, "index.ts")) || existsSync(join(dir, "index.js"))) return true;
+
   try {
-    const pkg = JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as {
-      pi?: { extensions?: unknown };
-    };
-    return Array.isArray(pkg?.pi?.extensions) && pkg.pi.extensions.length > 0;
+    const pkg: unknown = JSON.parse(readFileSync(join(dir, "package.json"), "utf8"));
+
+    return Check(ExtensionManifestSchema, pkg) && (pkg.pi?.extensions?.length ?? 0) > 0;
   } catch {
     return false;
   }
@@ -315,11 +363,14 @@ function isExtensionDir(dir: string): boolean {
 
 function scanExtensionPaths(cwd: string, agentDir = getAgentDir()): string[] {
   const found: string[] = [];
+
   const dirs = cwd
     ? [join(agentDir, "extensions"), join(cwd, CONFIG_DIR_NAME, "extensions")]
     : [join(agentDir, "extensions")];
+
   for (const dir of dirs) {
     let entries: Dirent[];
+
     try {
       entries = readdirSync(dir, { withFileTypes: true });
     } catch {
@@ -328,6 +379,7 @@ function scanExtensionPaths(cwd: string, agentDir = getAgentDir()): string[] {
 
     for (const entry of entries) {
       const full = join(dir, entry.name);
+
       if (
         (entry.isFile() || entry.isSymbolicLink()) &&
         (entry.name.endsWith(".ts") || entry.name.endsWith(".js"))
@@ -338,6 +390,7 @@ function scanExtensionPaths(cwd: string, agentDir = getAgentDir()): string[] {
       }
     }
   }
+
   return found;
 }
 
@@ -346,11 +399,15 @@ function extensionDisplayName(extPath: string): string {
   const parts = extPath.replace(/\\/g, "/").split("/");
   const nm = parts.lastIndexOf("node_modules");
   const after = nm >= 0 ? parts[nm + 1] : undefined;
+
   if (after) {
     return after.startsWith("@") ? parts.slice(nm + 1, nm + 3).join("/") : after;
   }
+
   const base = parts[parts.length - 1] ?? extPath;
+
   if (/^index\.[tj]s$/.test(base)) return parts[parts.length - 2] ?? base;
+
   return base.replace(/\.[tj]s$/, "");
 }
 
@@ -360,8 +417,11 @@ function extensionDisplayName(extPath: string): string {
  */
 function shortenHome(value: string): string {
   const home = homedir();
+
   if (!home) return value;
+
   if (value === home) return "~";
+
   return value.startsWith(`${home}/`) || value.startsWith(`${home}\\`)
     ? `~${value.slice(home.length)}`
     : value;
@@ -370,13 +430,16 @@ function shortenHome(value: string): string {
 /** Shorten a context path: relative when under cwd, ~/ when under home. */
 export function displayPath(path: string, cwd: string): string {
   const rel = relative(cwd, path);
+
   if (rel && !rel.startsWith("..") && !rel.startsWith("/")) return rel;
+
   return shortenHome(path);
 }
 
 /** Shorten cwd itself: ~/ when under home, otherwise full. */
 export function displayCwd(cwd: string): string {
   if (!cwd) return "none";
+
   return shortenHome(cwd);
 }
 
@@ -390,7 +453,9 @@ function formatAgentsDisplay(
   cwd: string,
 ): string {
   if (agentsPaths === undefined) return loadedAgents;
+
   if (agentsPaths.length === 0) return "none";
+
   return agentsPaths.map((path) => displayPath(path, cwd)).join(", ");
 }
 
@@ -417,6 +482,7 @@ function buildTable(theme: Theme, width: number, loaded: LoadedInfo): string[] {
     loaded.agents,
     loaded.extensions,
   ].join("\u0000");
+
   if (tableCache && tableCache.theme === theme && tableCache.key === key) {
     return tableCache.lines;
   }
@@ -425,13 +491,17 @@ function buildTable(theme: Theme, width: number, loaded: LoadedInfo): string[] {
   const logoWidth = Math.max(...logoRows.map((r) => visibleWidth(r)));
   const valueWidth = Math.max(width - logoWidth - 7, 8);
   const border = (s: string) => theme.fg("borderMuted", s);
+
   // Logo rows carry their own ANSI colors, so only truncate and pad here;
   // wrapping them in a theme color would leak into the brand mark.
   const fitLogo = (s: string) => {
     const clipped = truncateToWidth(s, logoWidth);
+
     return clipped + " ".repeat(Math.max(0, logoWidth - visibleWidth(clipped)));
   };
+
   const dim = (s: string) => theme.fg("dim", s);
+
   const entries: Array<{ text: string; color: (s: string) => string }> = [
     { text: `Version: ${VERSION}`, color: (s) => theme.bold(theme.fg("accent", s)) },
     { text: `Model: ${loaded.model}`, color: (s) => theme.fg("mdHeading", s) },
@@ -453,16 +523,21 @@ function buildTable(theme: Theme, width: number, loaded: LoadedInfo): string[] {
       color: (s) => (loaded.extensions === "none" ? dim(s) : theme.fg("syntaxString", s)),
     },
   ];
+
   const sep = (l: string, m: string, r: string) =>
     border(`${l}${"━".repeat(logoWidth + 2)}${m}${"━".repeat(valueWidth + 2)}${r}`);
+
   const row = (logoCell: string, chunk: string, color: (s: string) => string) =>
     `${border("┃ ")}${fitLogo(logoCell)}${border(" ┃ ")}${color(chunk.padEnd(valueWidth))}${border(" ┃")}`;
+
   const divider = (logoCell: string) =>
     `${border("┃ ")}${fitLogo(logoCell)}${border(" ┣")}${border("━".repeat(valueWidth + 2))}${border("┫")}`;
 
   // Center the Pi logo block with the table height
   const chunksPerEntry = entries.map((entry) => wrapTextWithAnsi(entry.text, valueWidth));
+
   type RowSpec = { chunk: string; color: (s: string) => string } | { divider: true };
+
   const rowSpecs: RowSpec[] = [];
   entries.forEach((entry, k) => {
     // Lists are pre-truncated via formatNameList, so this wrap only kicks in
@@ -470,11 +545,13 @@ function buildTable(theme: Theme, width: number, loaded: LoadedInfo): string[] {
     for (const chunk of chunksPerEntry[k] ?? []) {
       rowSpecs.push({ chunk, color: entry.color });
     }
+
     if (k < entries.length - 1) rowSpecs.push({ divider: true });
   });
   const totalRows = Math.max(rowSpecs.length, logoRows.length);
   const logoStart = Math.floor(Math.max(0, totalRows - logoRows.length) / 2);
   const paddedLogo = Array.from({ length: totalRows }, (_, i) => logoRows[i - logoStart] ?? "");
+
   while (rowSpecs.length < totalRows) {
     rowSpecs.push({ chunk: "", color: (s) => s });
   }
@@ -482,12 +559,14 @@ function buildTable(theme: Theme, width: number, loaded: LoadedInfo): string[] {
   const lines = [sep("┏", "┳", "┓")];
   rowSpecs.forEach((spec, i) => {
     const logoCell = paddedLogo[i] ?? "";
+
     if ("divider" in spec) lines.push(divider(logoCell));
     else lines.push(row(logoCell, spec.chunk, spec.color));
   });
   lines.push(sep("┗", "┻", "┛"));
   const rendered = lines.map((line) => truncateToWidth(line, width));
   tableCache = { theme, key, lines: rendered };
+
   return rendered;
 }
 
@@ -504,6 +583,7 @@ export default function startupHeader(pi: ExtensionAPI) {
     agents: "none",
     extensions: "none",
   };
+
   let requestRender: (() => void) | undefined;
   let lastCwd = "";
   let lastAgentDir = getAgentDir();
@@ -516,33 +596,41 @@ export default function startupHeader(pi: ExtensionAPI) {
     scanDisk = false,
   ): void {
     lastCwd = cwd || "";
+
     try {
       lastAgentDir = getAgentDir();
     } catch {
       // keep previous agentDir when pi has no agent dir (tests)
     }
+
     const entries = readLiveMcpEntries(pi, lastAgentDir, lastCwd);
     let toolNames: string[] = [];
+
     try {
       toolNames = (pi.getAllTools?.() ?? []).map((t) => t.name);
     } catch {
       toolNames = [];
     }
+
     // Disk scans are synchronous: run them on session start (or once when no
     // scan has happened yet) and let the in-memory tool/command sources keep
     // the header current on later turns.
     if (scanDisk || diskExtensionPaths.length === 0) {
       diskExtensionPaths = scanExtensionPaths(cwd);
     }
+
     const extPaths = new Set<string>(diskExtensionPaths);
+
     try {
       for (const t of pi.getAllTools?.() ?? []) {
-        const p = (t as { sourceInfo?: { path?: string } })?.sourceInfo?.path;
+        const p = t.sourceInfo?.path;
+
         if (p && !p.startsWith("<builtin") && !p.startsWith("<sdk")) extPaths.add(p);
       }
     } catch {
       // ignore tool source errors; disk scan already populated extPaths
     }
+
     try {
       for (const c of pi.getCommands?.() ?? []) {
         if (c.source === "extension" && c.sourceInfo?.path) extPaths.add(c.sourceInfo.path);
@@ -550,9 +638,11 @@ export default function startupHeader(pi: ExtensionAPI) {
     } catch {
       // ignore command source errors
     }
+
     const extNames = Array.from(new Set([...extPaths].map(extensionDisplayName))).sort((a, b) =>
       a.localeCompare(b),
     );
+
     const agentsDisplay = formatAgentsDisplay(agentsPaths, loaded.agents, cwd);
     loaded = {
       model: modelLabel || "no-model",
@@ -570,6 +660,7 @@ export default function startupHeader(pi: ExtensionAPI) {
     snapshot(scanAgentsFiles(ctx.cwd).map((f) => f.path), ctx.cwd, modelLabel, true);
     ctx.ui.setHeader((tui, _theme) => {
       requestRender = () => tui.requestRender();
+
       return {
         // Frame renders must stay allocation-only: no disk reads or JSON
         // parsing here. The snapshot events above refresh the data.

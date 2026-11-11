@@ -20,6 +20,7 @@ export class NodeFileSystem implements FileSystem {
     const dir = dirname(path);
     const tmp = join(dir, `.pi-skill-toggle-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}.tmp`);
     let mode: number | undefined;
+
     try {
       mode = (await fs.stat(path)).mode;
     } catch {
@@ -27,15 +28,18 @@ export class NodeFileSystem implements FileSystem {
     }
 
     await fs.writeFile(tmp, content, "utf8");
+
     if (mode !== undefined) {
       await fs.chmod(tmp, mode);
     }
+
     await fs.rename(tmp, path);
   }
 
   async access(path: string, mode = constants.F_OK): Promise<boolean> {
     try {
       await fs.access(path, mode);
+
       return true;
     } catch {
       return false;
@@ -44,6 +48,7 @@ export class NodeFileSystem implements FileSystem {
 
   async readdir(path: string): Promise<Array<{ name: string; isDirectory: boolean; isFile: boolean; isSymbolicLink: boolean }>> {
     const entries = await fs.readdir(path, { withFileTypes: true });
+
     return entries.map((entry) => ({
       name: entry.name,
       isDirectory: entry.isDirectory(),
@@ -58,6 +63,7 @@ export class NodeFileSystem implements FileSystem {
 
   async stat(path: string): Promise<{ isDirectory: boolean; isFile: boolean; mode: number }> {
     const stats = await fs.stat(path);
+
     return { isDirectory: stats.isDirectory(), isFile: stats.isFile(), mode: stats.mode };
   }
 }

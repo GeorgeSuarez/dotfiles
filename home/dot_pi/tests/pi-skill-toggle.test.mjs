@@ -63,7 +63,9 @@ class MemoryFileSystem {
 
   async readFile(path) {
     const value = this.files.get(path);
+
     if (value === undefined) throw new Error(`missing file: ${path}`);
+
     return value;
   }
 
@@ -202,11 +204,13 @@ describe("DefaultSkillTogglePlanner", () => {
 
   test("plans a normalization change for duplicated keys even if the mode is unchanged", async () => {
     const filePath = "/skills/handoff/SKILL.md";
+
     const planner = new DefaultSkillTogglePlanner(
       new MemoryFileSystem(new Map([[filePath, duplicatedKeySkill()]])),
       codec,
       patcher,
     );
+
     const record = skillRecord(filePath, "manual-only");
 
     const changes = await planner.plan([record], [{ skill: record, desiredMode: "manual-only" }]);
@@ -219,11 +223,13 @@ describe("DefaultSkillTogglePlanner", () => {
 
   test("produces no change when the mode already matches", async () => {
     const filePath = "/skills/handoff/SKILL.md";
+
     const planner = new DefaultSkillTogglePlanner(
       new MemoryFileSystem(new Map([[filePath, manualOnlySkill()]])),
       codec,
       patcher,
     );
+
     const record = skillRecord(filePath, "manual-only");
 
     expect(await planner.plan([record], [{ skill: record, desiredMode: "manual-only" }])).toEqual([]);
@@ -231,11 +237,13 @@ describe("DefaultSkillTogglePlanner", () => {
 
   test("skips read-only skills", async () => {
     const filePath = "/skills/handoff/SKILL.md";
+
     const planner = new DefaultSkillTogglePlanner(
       new MemoryFileSystem(new Map([[filePath, manualOnlySkill()]])),
       codec,
       patcher,
     );
+
     const record = { ...skillRecord(filePath, "manual-only"), editable: false };
 
     expect(await planner.plan([record], [{ skill: record, desiredMode: "agent-invocable" }])).toEqual([]);
@@ -243,11 +251,13 @@ describe("DefaultSkillTogglePlanner", () => {
 
   test("skips skills without frontmatter instead of inventing any", async () => {
     const filePath = "/skills/plain/SKILL.md";
+
     const planner = new DefaultSkillTogglePlanner(
       new MemoryFileSystem(new Map([[filePath, "# Plain\n"]])),
       codec,
       patcher,
     );
+
     const record = skillRecord(filePath, "agent-invocable");
 
     expect(await planner.plan([record], [{ skill: record, desiredMode: "manual-only" }])).toEqual([]);
@@ -267,6 +277,7 @@ describe("AtomicSkillChangeWriter", () => {
       mode: "agent-invocable",
       diagnostics: [],
     };
+
     return {
       skill: record,
       filePath,
@@ -302,6 +313,7 @@ describe("AtomicSkillChangeWriter", () => {
         ["/skills/c/SKILL.md", "OLD"],
       ]),
     );
+
     const result = await new AtomicSkillChangeWriter(fs).apply([
       change("/skills/a/SKILL.md", "a"),
       change("/skills/b/SKILL.md", "b"),
@@ -356,6 +368,7 @@ describe("DefaultSkillLocator", () => {
 
   test("deduplicates global and project skill roots that resolve to the same directory", async () => {
     const canonicalSkillRoot = `${DOTFILES_ROOT}/.agents/skills`;
+
     const fs = new MemoryTreeFileSystem(
       [`${GLOBAL_ROOT}/code-review/SKILL.md`, `${canonicalSkillRoot}/code-review/SKILL.md`],
       new Map([
@@ -373,6 +386,7 @@ describe("DefaultSkillLocator", () => {
   test("deduplicates symlinked skill files when their parent roots are distinct", async () => {
     const globalSkillFile = `${GLOBAL_ROOT}/code-review/SKILL.md`;
     const projectSkillFile = `${DOTFILES_ROOT}/.agents/skills/code-review/SKILL.md`;
+
     const fs = new MemoryTreeFileSystem(
       [globalSkillFile, projectSkillFile],
       new Map([
@@ -467,6 +481,7 @@ class MemoryTreeFileSystem {
     this.files = new Set();
     this.dirs = new Set(["/"]);
     this.canonicalPaths = canonicalPaths;
+
     for (const path of paths) this.addFile(path);
   }
 
@@ -476,6 +491,7 @@ class MemoryTreeFileSystem {
 
   async readFile(path) {
     if (!this.files.has(path)) throw new Error(`missing file: ${path}`);
+
     return "---\nname: test\ndescription: Test skill.\n---\n";
   }
 
@@ -489,18 +505,24 @@ class MemoryTreeFileSystem {
     if (!this.dirs.has(path)) throw new Error(`missing dir: ${path}`);
     const prefix = path === "/" ? "/" : `${path}/`;
     const names = new Set();
+
     for (const dir of this.dirs) {
       if (dir === path || !dir.startsWith(prefix)) continue;
       const [name] = dir.slice(prefix.length).split("/");
+
       if (name) names.add(name);
     }
+
     for (const file of this.files) {
       if (!file.startsWith(prefix)) continue;
       const [name] = file.slice(prefix.length).split("/");
+
       if (name) names.add(name);
     }
+
     return [...names].sort().map((name) => {
       const fullPath = path === "/" ? `/${name}` : `${path}/${name}`;
+
       return {
         name,
         isDirectory: this.dirs.has(fullPath),
@@ -518,6 +540,7 @@ class MemoryTreeFileSystem {
     this.files.add(path);
     const parts = path.split("/").filter(Boolean);
     let current = "";
+
     for (const part of parts.slice(0, -1)) {
       current += `/${part}`;
       this.dirs.add(current);

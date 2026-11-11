@@ -21,12 +21,15 @@ export class DefaultSkillLocator implements SkillLocator {
       if (!(await this.fs.access(root.path))) continue;
 
       const canonicalSkillRoot = await this.fs.realpath(root.path);
+
       if (seenSkillRoots.has(canonicalSkillRoot)) continue;
       seenSkillRoots.add(canonicalSkillRoot);
 
       const found = await this.scanSkillDir(root.path, root.path, root.source, root.includeRootMarkdownFiles);
+
       for (const file of found) {
         const canonicalSkillFile = await this.fs.realpath(file.filePath);
+
         if (seenCanonicalSkillFiles.has(canonicalSkillFile)) continue;
         seenCanonicalSkillFiles.add(canonicalSkillFile);
         files.push(file);
@@ -44,6 +47,7 @@ export class DefaultSkillLocator implements SkillLocator {
   ): Promise<LocatedSkillFile[]> {
     const out: LocatedSkillFile[] = [];
     let entries: Awaited<ReturnType<FileSystem["readdir"]>>;
+
     try {
       entries = await this.fs.readdir(dir);
     } catch {
@@ -51,19 +55,24 @@ export class DefaultSkillLocator implements SkillLocator {
     }
 
     const skillEntry = entries.find((entry) => entry.name === "SKILL.md");
+
     if (skillEntry) {
       const filePath = join(dir, "SKILL.md");
+
       if (await this.isFile(filePath, skillEntry)) {
         out.push({ filePath, source, editable: await this.isWritable(filePath) });
       }
+
       return out;
     }
 
     for (const entry of entries) {
       if (entry.name.startsWith(".")) continue;
+
       if (entry.name === "node_modules") continue;
 
       const fullPath = join(dir, entry.name);
+
       if (await this.isDirectory(fullPath, entry)) {
         out.push(...(await this.scanSkillDir(fullPath, root, source, false)));
         continue;
@@ -79,7 +88,9 @@ export class DefaultSkillLocator implements SkillLocator {
 
   private async isDirectory(path: string, entry: { isDirectory: boolean; isSymbolicLink: boolean }): Promise<boolean> {
     if (entry.isDirectory) return true;
+
     if (!entry.isSymbolicLink) return false;
+
     try {
       return (await this.fs.stat(path)).isDirectory;
     } catch {
@@ -89,7 +100,9 @@ export class DefaultSkillLocator implements SkillLocator {
 
   private async isFile(path: string, entry: { isFile: boolean; isSymbolicLink: boolean }): Promise<boolean> {
     if (entry.isFile) return true;
+
     if (!entry.isSymbolicLink) return false;
+
     try {
       return (await this.fs.stat(path)).isFile;
     } catch {

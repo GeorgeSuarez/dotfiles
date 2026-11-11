@@ -632,6 +632,7 @@ const messages = [
 
 function pickRandom(): string {
   const index = Math.floor(Math.random() * messages.length);
+
   return messages[index] ?? "Working...";
 }
 
