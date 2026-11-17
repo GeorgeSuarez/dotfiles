@@ -1,6 +1,6 @@
 {
   "lastChangelogVersion": "1.5.2",
-  "theme": "dark",
+  "theme": "tokyo-night-storm-improved",
   "defaultProvider": "opencode-go",
   "defaultModel": "deepseek-v4.1-flash",
   "defaultThinkingLevel": "max",
