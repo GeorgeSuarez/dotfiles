@@ -70,7 +70,28 @@ alias sync-dotfiles='chezmoi diff && chezmoi apply'
 # we do not need before the prompt exists.
 _fzf_load() {
   add-zsh-hook -d precmd _fzf_load
-  command -v fzf >/dev/null 2>&1 && source <(fzf --zsh)
+  command -v fzf >/dev/null 2>&1 || return
+  # fzf >= 0.48 prints its zsh integration; older builds (Ubuntu jammy ships
+  # 0.29) answer `fzf --zsh` with `unknown option: --zsh` and instead install
+  # the same widgets as shell files.
+  local integration
+  if integration=$(fzf --zsh 2>/dev/null) && [[ -n $integration ]]; then
+    source <(print -r -- "$integration")
+    return
+  fi
+  local -a shell_files=(
+    /usr/share/doc/fzf/examples/key-bindings.zsh
+    /usr/share/doc/fzf/examples/completion.zsh
+  )
+  (( $+HOMEBREW_PREFIX )) && shell_files=(
+    $HOMEBREW_PREFIX/opt/fzf/shell/key-bindings.zsh
+    $HOMEBREW_PREFIX/opt/fzf/shell/completion.zsh
+    $shell_files
+  )
+  local file
+  for file in $shell_files; do
+    [[ -r $file ]] && source $file
+  done
 }
 autoload -Uz add-zsh-hook
 add-zsh-hook precmd _fzf_load

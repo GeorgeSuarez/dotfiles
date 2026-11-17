@@ -134,9 +134,10 @@
       "sourceUrl": "https://github.com/trycua/cua.git",
       "ref": "main",
       "skillPath": "libs/cua-driver/rust/Skills/cua-driver/SKILL.md",
-      "skillFolderHash": "30b0e959e753446ce2ac6bdff045ee970e14cc0d",
+      "skillFolderHash": "6f309d9731e557ffa9d7c9d31e6c50173742f63d",
       "installedAt": "2026-09-10T02:29:16.149Z",
-      "updatedAt": "2026-11-11T22:22:54.149Z"
+      "updatedAt": "2026-11-16T23:29:13.070Z",
+      "commit": "494c3cdcc2768033bd75ba34745ce810fc55052d"
     },
     "show-me": {
       "source": "humanlayer/skills",
@@ -152,9 +153,10 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/emilkowalski/skills.git",
       "skillPath": "skills/find-animation-opportunities/SKILL.md",
-      "skillFolderHash": "e6443880f38e33cf78e5d678471eed35e8566763",
+      "skillFolderHash": "4a44e78f996f1e1877ab6d2c82596c64c36e8bb9",
       "installedAt": "2026-10-23T02:29:12.086Z",
-      "updatedAt": "2026-10-23T02:29:12.086Z"
+      "updatedAt": "2026-11-16T23:29:13.121Z",
+      "commit": "64eb3deb9a5fbfa041faf783e0bc3fd635872e9c"
     },
     "frontend-design": {
       "source": "anthropics/skills",
@@ -164,52 +166,58 @@
       "skillFolderHash": "d79e2a5bb4df4a386c2adcdd9ab8709bba28c3f6",
       "pluginName": "example-skills",
       "installedAt": "2026-10-23T03:25:26.691Z",
-      "updatedAt": "2026-10-23T03:25:26.691Z"
+      "updatedAt": "2026-11-16T23:29:13.228Z",
+      "commit": "e4bb5d960d87126ff3b3a8af1a104b7db67560ba"
     },
     "emil-design-eng": {
       "source": "emilkowalski/skills",
       "sourceType": "github",
       "sourceUrl": "https://github.com/emilkowalski/skills.git",
       "skillPath": "skills/emil-design-eng/SKILL.md",
-      "skillFolderHash": "e79b9cc03e06efe8d40349bc39df0ed4a9d5deff",
+      "skillFolderHash": "8086a08e5ebde316c4b9226764f1f2196e1869fa",
       "installedAt": "2026-10-23T03:25:28.237Z",
-      "updatedAt": "2026-11-02T22:58:06.872Z"
+      "updatedAt": "2026-11-16T23:29:13.169Z",
+      "commit": "64eb3deb9a5fbfa041faf783e0bc3fd635872e9c"
     },
     "better-ui": {
       "source": "jakubkrehel/skills",
       "sourceType": "github",
       "sourceUrl": "https://github.com/jakubkrehel/skills.git",
       "skillPath": "skills/better-ui/SKILL.md",
-      "skillFolderHash": "6067ef3ae11c7f467cf32016741dd2591a6325f5",
+      "skillFolderHash": "41277f622e45af4c7487e9f4a4e25dc8f361962b",
       "installedAt": "2026-10-23T03:25:30.028Z",
-      "updatedAt": "2026-10-26T22:13:28.550Z"
+      "updatedAt": "2026-11-16T23:29:13.324Z",
+      "commit": "6c2120103600407a1a9986afd834e73144ef8998"
     },
     "better-typography": {
       "source": "jakubkrehel/skills",
       "sourceType": "github",
       "sourceUrl": "https://github.com/jakubkrehel/skills.git",
       "skillPath": "skills/better-typography/SKILL.md",
-      "skillFolderHash": "aead1cd1526b13690c48513115030728cfbd4c2f",
+      "skillFolderHash": "1299803082a5821139b0fd9355e9cdd61da5760a",
       "installedAt": "2026-10-23T03:25:31.608Z",
-      "updatedAt": "2026-10-26T22:13:29.822Z"
+      "updatedAt": "2026-11-16T23:29:13.415Z",
+      "commit": "6c2120103600407a1a9986afd834e73144ef8998"
     },
     "better-colors": {
       "source": "jakubkrehel/skills",
       "sourceType": "github",
       "sourceUrl": "https://github.com/jakubkrehel/skills.git",
       "skillPath": "skills/better-colors/SKILL.md",
-      "skillFolderHash": "5851236fb32cabcb93e2a6aa424305fe38a1894b",
+      "skillFolderHash": "f283bca341357defa9560bf32dc5e14ec09a8be5",
       "installedAt": "2026-10-23T03:25:33.361Z",
-      "updatedAt": "2026-10-26T22:13:30.976Z"
+      "updatedAt": "2026-11-16T23:29:13.510Z",
+      "commit": "6c2120103600407a1a9986afd834e73144ef8998"
     },
     "better-layout": {
       "source": "jakubkrehel/skills",
       "sourceType": "github",
       "sourceUrl": "https://github.com/jakubkrehel/skills.git",
       "skillPath": "skills/better-layout/SKILL.md",
-      "skillFolderHash": "4c3a6e2e53026e171e79b17b0d86c8d4d8639f49",
+      "skillFolderHash": "7d8d640717114397de0054eac877793fa2d79742",
       "installedAt": "2026-10-23T03:25:35.111Z",
-      "updatedAt": "2026-10-26T22:13:32.292Z"
+      "updatedAt": "2026-11-16T23:29:13.582Z",
+      "commit": "6c2120103600407a1a9986afd834e73144ef8998"
     },
     "resume-cover-letter": {
       "source": "jezweb/claude-skills",
@@ -218,7 +226,8 @@
       "skillPath": "plugins/writing/skills/resume-cover-letter/SKILL.md",
       "skillFolderHash": "af34f49a0aa8b1509031e5c7397e49830776f085",
       "installedAt": "2026-10-28T01:17:52.793Z",
-      "updatedAt": "2026-10-28T01:17:52.793Z"
+      "updatedAt": "2026-11-16T23:29:13.635Z",
+      "commit": "1260fa7439b36b18dbf16648ccc7fb44783f6c23"
     },
     "plannotator-compound": {
       "source": "backnotprop/plannotator",
@@ -227,7 +236,8 @@
       "skillPath": "apps/skills/extra/plannotator-compound/SKILL.md",
       "skillFolderHash": "73dcebd303714bcc3fbdffae162068435eb49d97",
       "installedAt": "2026-11-10T00:00:54.147Z",
-      "updatedAt": "2026-11-10T00:00:54.147Z"
+      "updatedAt": "2026-11-16T23:29:13.828Z",
+      "commit": "3eeabf78b80ece502a9fc993b1dd5e4541c3854b"
     },
     "plannotator-setup-goal": {
       "source": "backnotprop/plannotator",
@@ -236,7 +246,8 @@
       "skillPath": "apps/skills/extra/plannotator-setup-goal/SKILL.md",
       "skillFolderHash": "29d5d60c2b8a88c1786d7bbdbbfa37e44b64f6a5",
       "installedAt": "2026-11-10T00:00:54.149Z",
-      "updatedAt": "2026-11-10T00:00:54.149Z"
+      "updatedAt": "2026-11-16T23:29:14.014Z",
+      "commit": "3eeabf78b80ece502a9fc993b1dd5e4541c3854b"
     },
     "plannotator-visual-explainer": {
       "source": "backnotprop/plannotator",
@@ -245,7 +256,8 @@
       "skillPath": "apps/skills/extra/plannotator-visual-explainer/SKILL.md",
       "skillFolderHash": "48b1d39f317db181b75c8c4dafba6b78bb8f17a4",
       "installedAt": "2026-11-10T00:00:54.150Z",
-      "updatedAt": "2026-11-10T00:00:54.150Z"
+      "updatedAt": "2026-11-16T23:29:14.226Z",
+      "commit": "3eeabf78b80ece502a9fc993b1dd5e4541c3854b"
     }
   },
   "dismissed": {
